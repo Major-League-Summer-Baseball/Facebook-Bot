@@ -14,8 +14,9 @@ def meme_response(message, callback, id):
         r = requests.get("http://version1.api.memegenerator.net/Generators_Select_ByTrending")
         if r.status_code == 200:
             meme = r.json()['result']
-            meme = randint(0, len(meme) - 1)
-            callback(meme.url, id)
+            meme = meme[randint(0, len(meme) - 1)]
+            print(meme)
+            callback(meme['imageUrl'], id)
 
 import pprint
 import unittest
