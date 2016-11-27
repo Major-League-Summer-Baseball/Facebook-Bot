@@ -16,7 +16,7 @@ def meme_response(message, callback, id):
             meme = r.json()['result']
             meme = meme[randint(0, len(meme) - 1)]
             print(meme)
-            callback(meme['imageUrl'], id)
+            callback(meme['displayName'], meme['imageUrl'], id)
 
 import pprint
 import unittest
@@ -28,7 +28,7 @@ class Test(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def callback(self, message, __):
+    def callback(self, message, memeUrl, __):
         self.result = message
         self.pp.pprint(self.result)
 

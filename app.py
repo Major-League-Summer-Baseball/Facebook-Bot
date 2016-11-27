@@ -45,6 +45,7 @@ def webhook():
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
                     parse_message(message_text, send_message, sender_id)
+                    parse_meme(message_text, send_meme, id)
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
                 if messaging_event.get("optin"):  # optin confirmation
@@ -54,12 +55,13 @@ def webhook():
     return "ok", 200
 
 def parse_message(message, callback, id):
-    response = "Too cool for me!!"
     message = message.lower()
     basic_response(message, callback, id)
     trump_response(message, callback, id)
+
+def parse_meme(message, callback, id):
+    message = message.lower()
     meme_response(message, callback, id)
-    return
 
 def basic_response(message, callback, id):
     if re.search("who(\s?)('s)*the(\s?)best", message):
@@ -96,7 +98,34 @@ def send_message(message_text, recipient_id):
         log(r.status_code)
         log(r.text)
 
-
+def send_meme(message_text, meme, recipient_id):
+    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
+    params = {
+        "access_token": os.environ["PAGE_ACCESS_TOKEN"]
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    data = json.dumps({
+        "recipient": {
+            "id": recipient_id
+        },
+        "message": {
+            "text": message_text,
+             "attachment":{
+                            "type":"image",
+                            "payload":{
+                                "url":meme,
+                            "is_reusable":True
+                            }
+                    }
+        }
+    })
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
+    if r.status_code != 200:
+        log(r.status_code)
+        log(r.text)
+    
 def log(message):  # simple wrapper for logging to stdout on heroku
     print(str(message))
     sys.stdout.flush()
