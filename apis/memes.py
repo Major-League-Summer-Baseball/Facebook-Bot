@@ -13,6 +13,7 @@ def meme_response(message, callback, id):
     if re.search(r"(meme)+", message):
         r = requests.get("http://version1.api.memegenerator.net/Generators_Select_ByTrending")
         if r.status_code == 200:
+            print(r.json())
             meme = r.json()['result']
             meme = meme[randint(0, len(meme) - 1)]
             print(meme)

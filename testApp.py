@@ -5,7 +5,7 @@
 @summary: Test the message responses
 '''
 import unittest
-from app import parse_message
+from app import parse_message, parse_meme, send_meme
 
 class Test(unittest.TestCase):
     def setUp(self):
@@ -16,6 +16,10 @@ class Test(unittest.TestCase):
 
     def callback(self, message, __):
         self.result = message
+    def memeCallback(self, message, meme, __):
+        self.message = message
+        self.meme = meme
+        send_meme(message, meme, "1369431089736367")
 
     def testBestMessage(self):
         parse_message("who the best", self.callback, "")
@@ -34,6 +38,8 @@ class Test(unittest.TestCase):
         parse_message("Would you Rather smoke weed or smoke cigs?", self.callback, "")
         self.assertEqual(self.result in "smoke weed smoke cigs", True)
 
+    def testMeme(self):
+        parse_meme("meme", self.memeCallback, "")
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
