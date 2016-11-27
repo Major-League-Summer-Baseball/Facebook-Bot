@@ -75,7 +75,7 @@ def basic_response(message, callback, id):
     elif re.search(r"would(\s?)you(\s?)rather", message):
         message = re.sub(r'[^a-zA-Z0-9_\s]', '', message)
         clause = message.split("rather")[1]
-        proposition = clause.split("or")
+        proposition = clause.split(" or ")
         pick_proposition = proposition[randint(0, len(proposition) - 1)]
         response = pick_proposition
         callback(response.strip(), id)
