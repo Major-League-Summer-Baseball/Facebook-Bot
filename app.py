@@ -44,8 +44,13 @@ def webhook():
                     sender_id = messaging_event["sender"]["id"]        # the facebook ID of the person sending you the message
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
-                    parse_message(message_text, send_message, sender_id)
-                    parse_meme(message_text, send_meme, id)
+                    try:
+                        parse_message(message_text, send_message, sender_id)
+                        parse_meme(message_text, send_meme, id)
+                    except Exception as e:
+                        print(str(e))
+                        send_message("Not sure what you mean", recipient_id)
+                    
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
                 if messaging_event.get("optin"):  # optin confirmation
