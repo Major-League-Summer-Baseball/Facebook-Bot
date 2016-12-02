@@ -13,26 +13,9 @@ from flask import Flask, request
 from random import randint
 from apis.trump import trump_response
 from apis.memes import meme_response
-from flask.ext.pymongo import PyMongo
-from chatterbot import ChatBot
-from apis.bot import da_bot_response
-from chatterbot.trainers import ChatterBotCorpusTrainer
-# import from config file or environment variables
-try:
-    from config import URI, DBNAME
-except:
-    URI = os.environ['URI']
-    DBNAME = os.environ['DBNAME']
 
 app = Flask(__name__)
 app.config.from_object(__name__)
-app.config['MONGO_DBNAME'] = DBNAME
-app.config['MONGO_URI'] = URI
-mongo = PyMongo(app)
-DA_BOT = ChatBot(storage_adapter='chatterbot.storage.MongoDatabaseAdapter',
-                 database=URI)
-DA_BOT.set_trainer(ChatterBotCorpusTrainer)
-DA_BOT.train("chatterbot.corpus.english")
 
 @app.route('/', methods=['GET'])
 def verify():
