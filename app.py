@@ -16,7 +16,6 @@ from apis.memes import meme_response
 
 app = Flask(__name__)
 app.config.from_object(__name__)
-
 @app.route('/', methods=['GET'])
 def verify():
     # when the endpoint is registered as a webhook, it must echo back
@@ -28,17 +27,12 @@ def verify():
 
     return "Hello world", 200
 
-
 @app.route('/', methods=['POST'])
 def webhook():
-
     # endpoint for processing incoming messaging events
-
     data = request.get_json()
     log(data)  # you may not want to log every incoming message in production, but it's good for testing
-
     if data["object"] == "page":
-
         for entry in data["entry"]:
             for messaging_event in entry["messaging"]:
                 if messaging_event.get("message"):  # someone sent us a message
@@ -51,7 +45,6 @@ def webhook():
                     except Exception as e:
                         print(str(e))
                         send_message("Not sure what you mean", recipient_id)
-                    
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
                 if messaging_event.get("optin"):  # optin confirmation
@@ -64,7 +57,6 @@ def parse_message(message, callback, id):
     message = message.lower()
     basic_response(message, callback, id)
     trump_response(message, callback, id)
-    da_bot_response(message, callback, id)
 
 def parse_meme(message, callback, id):
     message = message.lower()
@@ -81,11 +73,9 @@ def basic_response(message, callback, id):
         pick_proposition = proposition[randint(0, len(proposition) - 1)]
         response = pick_proposition
         callback(response.strip(), id)
-    
+
 def send_message(message_text, recipient_id):
-
     log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
-
     params = {
         "access_token": os.environ["PAGE_ACCESS_TOKEN"]
     }
@@ -136,7 +126,6 @@ def send_meme(message_text, meme, recipient_id):
 def log(message):  # simple wrapper for logging to stdout on heroku
     print(str(message))
     sys.stdout.flush()
-
 
 if __name__ == '__main__':
     app.run(debug=True)
