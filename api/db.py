@@ -5,6 +5,7 @@ Created on May 3, 2017
 '''
 import requests
 import unittest
+from datetime import date, datetime
 from api.helper import log
 from api.errors import FacebookException, PlatformException,\
                        PLATFORMMESSAGE, NotCaptainException, IdentityException
@@ -16,6 +17,7 @@ def get_user(identity, mongo):
 
     Parameters:
         identity: facebook id (string)
+        mongo: the mongo db
     Returns:
         (user, created): the user and boolean to tell if created or not
     """
@@ -39,12 +41,30 @@ def get_user(identity, mongo):
                                "pid": -1,
                                "game": {},
                                "teamroster": {},
-                               "captain": -1
+                               "captain": -1,
+                               "batter": -1
                                })
         user = mongo.db.users.find_one({'fid': identity})
         log("saved user")
         log(user)
     return (user, created)
+
+
+def already_in_league(user, player, mongo):
+    """Check if a player already in the league
+
+    Parameters:
+        user: the user dictionary (dict)
+        player: the player object
+        mongo: the mongo db
+    Returns
+        taken: True if someone already taken that player, False otherwise
+    """
+    taken = True
+    user = mongo.db.users.find_one({'pid': player['player_id']})
+    if user is None:
+        taken = False
+    return taken
 
 
 def save_user(user, mongo):
@@ -131,6 +151,65 @@ def update_player(user, player):
     return user
 
 
+def get_upcoming_games(user):
+    """Returns league leaders for some stat
+
+    Parameters:
+        user: the user dictionary (dict)
+    Returns:
+        r.json(): a list of upcoming games
+    """
+    params = {"player_id": user["pid"]}
+    r = requests.post(BASEURL + "api/bot/upcoming_games",
+                      data=params,
+                      headers=HEADERS)
+    if (r.status_code != 200):
+        raise PlatformException(PLATFORMMESSAGE)
+    return r.json()
+
+
+def get_events():
+    """Returns a dictionary object of the events
+    """
+    r = requests.get(BASEURL +
+                     "website/event/{}/json".format(date.today().year))
+    if (r.status_code != 200):
+        raise PlatformException(PLATFORMMESSAGE)
+    return r.json()
+
+
+def fun_meter():
+    """Returns the amount of fun
+
+    Returns:
+        fun: an amount of fun (int)
+    """
+    params = {"year": date.today().year}
+    r = requests.post(BASEURL + "api/view/fun",
+                      data=params,
+                      headers=HEADERS)
+    if (r.status_code != 200):
+        raise PlatformException(PLATFORMMESSAGE)
+    return r.json()
+
+
+def league_leaders(stat):
+    """Returns league leaders for some stat
+
+    Parameters:
+        stat: the stat classification (string)
+    Returns:
+        r.json(): a list of leaders
+    """
+    params = {"stat": stat, "year": date.today().year}
+    r = requests.post(BASEURL + "api/view/league_leaders",
+                      data=params,
+                      headers=HEADERS)
+    if (r.status_code != 200):
+        raise PlatformException(PLATFORMMESSAGE)
+    return r.json()
+
+
 def get_games(user):
     """Returns the captain games they can submit
 
@@ -182,6 +261,7 @@ def add_game(user, game_id):
                     "score": 0,
                     "hr": [],
                     "ss": []}
+    user['batter'] = -1
     # update the team roster
     user['teamroster'] = {}
     r = requests.get(BASEURL + "api/teamroster/{}".format(user['captain']))
@@ -189,7 +269,7 @@ def add_game(user, game_id):
         raise PlatformException(PLATFORMMESSAGE)
     players = r.json()['players']
     for player in players:
-        user['teamroster'][player['player_id']] = player['player_name']
+        user['teamroster'][player['player_id']] = player
     log(user['teamroster'])
     return user
 
@@ -251,14 +331,16 @@ def game_summary(user):
     hrs = {}
     for pid in user['game']['hr']:
         if pid not in hrs.keys():
-            hrs[pid] = {"count": 1, "name": user['teamroster'][pid]}
+            hrs[pid] = {"count": 1,
+                        "name": user['teamroster'][pid]['player_name']}
         else:
             hrs[pid]['count'] += 1
     # pair ss with their names and count
     ss = {}
     for pid in user['game']['ss']:
         if pid not in hrs.keys():
-            ss[pid] = {"count": 1, "name": user['teamroster'][pid]}
+            ss[pid] = {"count": 1,
+                       "name": user['teamroster'][pid]['player_name']}
         else:
             ss[pid]['count'] += 1
     summary.append("HR:")
@@ -282,7 +364,12 @@ class TestFunctions(unittest.TestCase):
                      }
 
     def testGameSummary(self):
-        self.user['teamroster'] = {2: "Dallas Fraser", 3: "Dream Girl"}
+        self.user['teamroster'] = {2: {'gender': 'm',
+                                       'player_id': 2,
+                                       'player_name': 'Dallas Fraser'},
+                                   3: {'gender': 'f',
+                                       'player_id': 3,
+                                       'player_name': 'Dream Girl'}}
         self.user['game']['score'] = 1
         self.user['game']['hr'] = [2, 2]
         self.user['game']['ss'] = [3]
@@ -369,8 +456,14 @@ class TestRequests(unittest.TestCase):
         user = add_game(self.user, 1)
         expect = {'name': 'Dallas Fraser',
                   'captain': 1,
-                  'state': -1,
-                  'teamroster': {2: 'Dallas Fraser', 3: 'Dream Girl'},
+                  'batter': -1,
+                  'state': PID,
+                  'teamroster': {2: {'gender': 'm',
+                                     'player_id': 2,
+                                     'player_name': 'Dallas Fraser'},
+                                 3: {'gender': 'f',
+                                     'player_id': 3,
+                                     'player_name': 'Dream Girl'}},
                   'fid': 1,
                   'pid': 2,
                   'game': {'hr': [], 'ss': [], 'score': 0, 'game_id': 1}}
@@ -502,6 +595,91 @@ class TestRequests(unittest.TestCase):
             self.assertEqual(True, False, "Should raise exception")
         except IdentityException as __:
             pass
+
+    def testGetEvents(self):
+        events = get_events()
+        expect = {'Jays_Game': 'May 9th'}
+        self.assertEqual(events, expect)
+
+    def testFunMeter(self):
+        fun = fun_meter()
+        expect = [{'count': 14, 'year': 2017}]
+        self.assertEqual(expect, fun)
+
+    def testGetLeaders(self):
+        leaders = league_leaders("ss")
+        expect = [{'team': 'CaliBurger Test',
+                   'id': 3,
+                   'team_id': 1,
+                   'name': 'Dream Girl',
+                   'hits': 1}]
+        self.assertEqual(leaders, expect)
+        leaders = league_leaders("hr")
+        expect = [{'hits': 2,
+                   'name': 'Stud',
+                   'team': 'CaliBurger Test2',
+                   'team_id': 2,
+                   'id': 4},
+                  {'hits': 1,
+                   'name': 'Dallas Fraser',
+                   'team': 'CaliBurger Test',
+                   'team_id': 1,
+                   'id': 2}]
+        self.assertEqual(leaders, expect)
+
+
+class TestUpcomingGames(unittest.TestCase):
+    def setUp(self):
+        self.game_id = None
+        # add a random games
+        params = {"home_team_id": 1,
+                  "away_team_id": 2,
+                  "league_id": 1,
+                  "date": datetime.today().strftime('%Y-%m-%d'),
+                  "time": "23:59",
+                  "status": "",
+                  "field": "WP1"
+                  }
+        r = requests.post(BASEURL + "api/games",
+                          headers=HEADERS, data=params)
+        if (r.status_code != 201):
+            # fuck what should i do
+            print("Couldnt add game")
+            pass
+        self.game_id = r .json()
+
+    def tearDown(self):
+        if self.game_id is not None:
+            r = requests.delete(BASEURL +
+                                "api/games/{:d}".format(self.game_id),
+                                headers=HEADERS)
+        if (r.status_code != 200):
+            # fuck what should i do
+            print(r.text)
+            print("Couldnt delete game")
+            pass
+
+    def testGetUpcomingGames(self):
+        # add a random games
+        self.user = {'pid': 2,
+                     'name': 'Dallas Fraser',
+                     'state': -1,
+                     'teamroster': {},
+                     'game': {},
+                     'fid': 1,
+                     'captain': -1}
+        games = get_upcoming_games(self.user)
+        expect = [{'away_team_id': 2,
+                   'game_id': self.game_id,
+                   'league_id': 1,
+                   'home_team': 'CaliBurger Test',
+                   'time': '23:59',
+                   'field': 'WP1',
+                   'date': '2017-05-04',
+                   'away_team': 'CaliBurger Test2',
+                   'status': '',
+                   'home_team_id': 1}]
+        self.assertEqual(games, expect)
 
 
 class TestSubmitScore(unittest.TestCase):
