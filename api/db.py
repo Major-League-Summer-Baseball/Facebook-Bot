@@ -6,10 +6,12 @@ Created on May 3, 2017
 import requests
 import unittest
 from datetime import date, datetime
-from api.helper import log
+from api.helper import log, loads
 from api.errors import FacebookException, PlatformException,\
-                       PLATFORMMESSAGE, NotCaptainException, IdentityException
+                       PLATFORMMESSAGE, NotCaptainException, IdentityException,\
+                       BatterException
 from api.variables import PID, HEADERS, BASEURL, PAGE_ACCESS_TOKEN
+
 
 
 def get_user(identity, mongo):
@@ -69,7 +71,7 @@ def already_in_league(user, player, mongo):
 
 def save_user(user, mongo):
     """ Save the changes of the user"""
-    mongo.db.users.save({"_id": user.inserted_id}, user)
+    mongo.db.users.save(user)
     return
 
 
@@ -219,15 +221,25 @@ def get_games(user):
         games: a list of games
     """
     params = {"player_id": user['pid'], "team": user['captain']}
+    log(params)
     r = requests.post(BASEURL + "api/bot/captain/games",
                       data=params,
                       headers=HEADERS)
+    log(r)
+    log(r.text)
     if (r.status_code == 401):
         log(r.text)
         raise NotCaptainException("Says you are not a captain, check admin")
     elif (r.status_code != 200):
-        log(r.status_code)
-        raise PlatformException(PLATFORMMESSAGE)
+            log(r.text)
+            log(r.status_code)
+            d = loads(r.text)
+            if d['status_code'] == 401 or d['status_code'] == 404:
+                m = "Says you are not a captain, check admin"
+                raise NotCaptainException(m)
+            else:
+
+                raise PlatformException(PLATFORMMESSAGE)
     games = r.json()
     return games
 
@@ -254,6 +266,22 @@ def submit_score(user):
     return user
 
 
+def change_batter(user, batter):
+    """Changes the current batter selected
+
+    Parameters:
+        user: the user dictionary (dict)
+        batter: the batter player id (int)
+    Returns:
+        user: the update user (dict)
+    """
+    if str(batter) in user['teamroster'].keys():
+        user['batter'] = batter
+    else:
+        raise BatterException()
+    return user
+
+
 def add_game(user, game_id):
     """add a game to the user
     """
@@ -269,7 +297,7 @@ def add_game(user, game_id):
         raise PlatformException(PLATFORMMESSAGE)
     players = r.json()['players']
     for player in players:
-        user['teamroster'][player['player_id']] = player
+        user['teamroster'][str(player['player_id'])] = player
     log(user['teamroster'])
     return user
 
@@ -332,7 +360,7 @@ def game_summary(user):
     for pid in user['game']['hr']:
         if pid not in hrs.keys():
             hrs[pid] = {"count": 1,
-                        "name": user['teamroster'][pid]['player_name']}
+                        "name": user['teamroster'][str(pid)]['player_name']}
         else:
             hrs[pid]['count'] += 1
     # pair ss with their names and count
@@ -340,7 +368,7 @@ def game_summary(user):
     for pid in user['game']['ss']:
         if pid not in hrs.keys():
             ss[pid] = {"count": 1,
-                       "name": user['teamroster'][pid]['player_name']}
+                       "name": user['teamroster'][str(pid)]['player_name']}
         else:
             ss[pid]['count'] += 1
     summary.append("HR:")
@@ -363,13 +391,40 @@ class TestFunctions(unittest.TestCase):
                      "captain": 1
                      }
 
+    def testChangeBatter(self):
+        self.user['teamroster'] = {"2": {'gender': 'm',
+                                         'player_id': 2,
+                                         'player_name': 'Dallas Fraser'},
+                                   "3": {'gender': 'f',
+                                         'player_id': 3,
+                                         'player_name': 'Dream Girl'}}
+        user = change_batter(self.user, 2)
+        expect = {'captain': 1,
+                  'fid': 1,
+                  'pid': 2,
+                  'state': -2,
+                  'game': {},
+                  'teamroster': {"2": {'gender': 'm',
+                                       'player_name': 'Dallas Fraser',
+                                       'player_id': 2},
+                                 "3": {'gender': 'f',
+                                       'player_name': 'Dream Girl',
+                                       'player_id': 3}},
+                  'name': 'Dallas Fraser', 'batter': 2}
+        self.assertEqual(user, expect)
+        try:
+            user = change_batter(self.user, -1)
+            self.assertEqual(False, True, "Batter exception should be raised")
+        except BatterException:
+            pass
+
     def testGameSummary(self):
-        self.user['teamroster'] = {2: {'gender': 'm',
-                                       'player_id': 2,
-                                       'player_name': 'Dallas Fraser'},
-                                   3: {'gender': 'f',
-                                       'player_id': 3,
-                                       'player_name': 'Dream Girl'}}
+        self.user['teamroster'] = {"2": {'gender': 'm',
+                                         'player_id': 2,
+                                         'player_name': 'Dallas Fraser'},
+                                   "3": {'gender': 'f',
+                                         'player_id': 3,
+                                         'player_name': 'Dream Girl'}}
         self.user['game']['score'] = 1
         self.user['game']['hr'] = [2, 2]
         self.user['game']['ss'] = [3]
@@ -458,12 +513,12 @@ class TestRequests(unittest.TestCase):
                   'captain': 1,
                   'batter': -1,
                   'state': PID,
-                  'teamroster': {2: {'gender': 'm',
-                                     'player_id': 2,
-                                     'player_name': 'Dallas Fraser'},
-                                 3: {'gender': 'f',
-                                     'player_id': 3,
-                                     'player_name': 'Dream Girl'}},
+                  'teamroster': {"2": {'gender': 'm',
+                                       'player_id': 2,
+                                       'player_name': 'Dallas Fraser'},
+                                 "3": {'gender': 'f',
+                                       'player_id': 3,
+                                       'player_name': 'Dream Girl'}},
                   'fid': 1,
                   'pid': 2,
                   'game': {'hr': [], 'ss': [], 'score': 0, 'game_id': 1}}
@@ -482,7 +537,20 @@ class TestRequests(unittest.TestCase):
                    'away_team_id': 2,
                    'field': 'WP1'}]
         self.assertEqual(expect, games)
-        print(games)
+        try:
+            self.user = {"fid": 1,
+                         "state": PID,
+                         "name": "Dallas Fraser",
+                         "pid": 2,
+                         "game": {},
+                         "teamroster": {},
+                         "captain": -1
+                         }
+            games = get_games(self.user)
+            self.assertEqual(False, True, "Should raise not a captain")
+        except NotCaptainException as e:
+            pass
+
 
     def testUpdatePlayer(self):
         # is a captain
@@ -632,10 +700,11 @@ class TestUpcomingGames(unittest.TestCase):
     def setUp(self):
         self.game_id = None
         # add a random games
+        self.d = datetime.today().strftime('%Y-%m-%d')
         params = {"home_team_id": 1,
                   "away_team_id": 2,
                   "league_id": 1,
-                  "date": datetime.today().strftime('%Y-%m-%d'),
+                  "date": self.d,
                   "time": "23:59",
                   "status": "",
                   "field": "WP1"
@@ -675,7 +744,7 @@ class TestUpcomingGames(unittest.TestCase):
                    'home_team': 'CaliBurger Test',
                    'time': '23:59',
                    'field': 'WP1',
-                   'date': '2017-05-04',
+                   'date': self.d,
                    'away_team': 'CaliBurger Test2',
                    'status': '',
                    'home_team_id': 1}]

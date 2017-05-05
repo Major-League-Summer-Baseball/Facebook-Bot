@@ -18,8 +18,12 @@ def loads(data):
 
 def log(message):
     # simple wrapper for logging to stdout on heroku
-    print(str(message))
-    sys.stdout.flush()
+    try:
+        print(str(message))
+        sys.stdout.flush()
+    except Exception as e:
+        print(str(e))
+        pass
 
 
 class Test(unittest.TestCase):

@@ -22,6 +22,7 @@ HEADERS = {
                                                           PASSWORD, "utf-8")
                                                     ).decode("ascii")
            }
+FALLBACK = "Try sending an email, if you have a question the bot cant handle"
 INTROS = ["What do you want?",
           "Well, hello there",
           "DAM Daniel!!, how you doing?",
@@ -40,6 +41,17 @@ COMPLIMENT = ["{} is my favourite player",
               "Tell {} to keep it up",
               "Fuck ya {}",
               "{} could be in the all-star game"]
+EMOJI = [u'\U0001f37a',
+         u'\U0001f600',
+         u'\U0001f377',
+         u'\U0001f382',
+         u'\u26a0',
+         u'\u26be',
+         u'\U0001f649']
+FUN_COMMENT = ["",
+               "",
+               "What fun",
+               "Are we having too fun?"]
 IGNORE = -3
 PID = IGNORE + 1
 EMAIL = PID + 1
