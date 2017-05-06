@@ -35,7 +35,7 @@ def get_user(identity, mongo):
             raise FacebookException("Facebook services not available")
         log(r.json())
         d = r.json()
-        name = d['first_name'] + d['last_name']
+        name = d['first_name'] +" " + d['last_name']
         # now we know who this person is
         mongo.db.users.insert({"fid": identity,
                                "state": PID,
@@ -146,6 +146,7 @@ def update_player(user, player):
     # now look up teams
     captain = -1
     teams = r.json()
+    log(teams)
     for team in teams:
         if team['captain']['player_id'] == user['pid']:
             captain = team["team_id"]
@@ -402,7 +403,7 @@ class TestFunctions(unittest.TestCase):
         expect = {'captain': 1,
                   'fid': 1,
                   'pid': 2,
-                  'state': -2,
+                  'state': PID,
                   'game': {},
                   'teamroster': {"2": {'gender': 'm',
                                        'player_name': 'Dallas Fraser',
@@ -693,6 +694,9 @@ class TestRequests(unittest.TestCase):
                    'team': 'CaliBurger Test',
                    'team_id': 1,
                    'id': 2}]
+
+        log(leaders)
+        log(expect)
         self.assertEqual(leaders, expect)
 
 
@@ -738,7 +742,7 @@ class TestUpcomingGames(unittest.TestCase):
                      'fid': 1,
                      'captain': -1}
         games = get_upcoming_games(self.user)
-        expect = [{'away_team_id': 2,
+        expect = {'away_team_id': 2,
                    'game_id': self.game_id,
                    'league_id': 1,
                    'home_team': 'CaliBurger Test',
@@ -747,8 +751,11 @@ class TestUpcomingGames(unittest.TestCase):
                    'date': self.d,
                    'away_team': 'CaliBurger Test2',
                    'status': '',
-                   'home_team_id': 1}]
-        self.assertEqual(games, expect)
+                   'home_team_id': 1}
+        for game in games:
+            if game == expect:
+                found = True
+        self.assertEqual(found, True)
 
 
 class TestSubmitScore(unittest.TestCase):

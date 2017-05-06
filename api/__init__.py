@@ -21,15 +21,11 @@ from api.errors import FacebookException, IdentityException,\
 from random import randint
 from base64 import b64encode
 from sqlalchemy.ext.mutable import Mutable
-from api.variables import PID, EMAIL, IGNORE, BASE, GAMES, SCORE, HR_BAT,\
-                          REVIEW, UPCOMING, LEADERS, EVENTS, FUN,\
-                          INTROS, HR_NUM, SS_BAT, SS_NUM, SASSY_COMMENT,\
-                          COMPLIMENT, EMOJI, FUN_COMMENT, FALLBACK, URL,\
-                          BASEURL, ADMIN, PASSWORD, PAGE_ACCESS_TOKEN,\
-                          VERIFY_TOKEN
+from api.variables import *
 import unittest
 from nltk.misc.sort import quick
 from lib2to3.pytree import Base
+from future.backports.http.client import NOT_FOUND
 
 app = Flask(__name__)
 app.config['MONGO_URI'] = URL
@@ -255,8 +251,8 @@ def webhook():
                             message_text = messaging_event["message"]["text"]
                         else:
                             message_text = ""
-                            typing_on(sender_id)
                             parse_message(message_text, sender_id)
+                        typing_on(sender_id)
                         (user, created) = get_user(sender_id, mongo)
                         if created:
                             determine_player(user, sender_id)
@@ -315,7 +311,7 @@ def get_postback_payload(message):
     """Returns the payload of the post
     """
     pay = None
-    if "postback" in  message.keys():
+    if "postback" in message.keys():
         if "payload" in message['postback']:
             pay = message["postback"]['payload']
     return pay
@@ -387,40 +383,40 @@ def base_options(user, sender_id, callback=send_message, buttons=True):
     """
     if buttons:
         options = [{"type": "postback",
-                    "title": "Upcoming Games",
+                    "title": UPCOMING_TITLE,
                     "payload": "{}".format(UPCOMING)},
                    {"type": "postback",
-                    "title": "League Leaders",
+                    "title": LEAGUE_LEADERS_TITLE,
                     "payload": "{}".format(LEADERS)},
                    {"type": "postback",
-                    "title": "Events",
+                    "title": EVENTS_TITLE,
                     "payload": "{}".format(EVENTS)},
                    {"type": "postback",
-                    "title": "Fun Meter",
+                    "title": FUN_TITLE,
                     "payload": "{}".format(FUN)}
                    ]
         if user['captain'] >= 0:
             options.append({"type": "postback",
-                            "title": "Submit Score",
+                            "title": SUBMIT_SCORE_TITLE,
                             "payload": "{}".format(GAMES)},)
         callback(random_intro(), sender_id, buttons=options)
     else:
         options = [{"content_type": "text",
-                    "title": "Upcoming Games",
+                    "title": UPCOMING_TITLE,
                     "payload": "{}".format(UPCOMING)},
                    {"content_type": "text",
-                    "title": "League Leaders",
+                    "title": LEAGUE_LEADERS_TITLE,
                     "payload": "{}".format(LEADERS)},
                    {"content_type": "text",
-                    "title": "Events",
+                    "title": EVENTS_TITLE,
                     "payload": "{}".format(EVENTS)},
                    {"content_type": "text",
-                    "title": "Fun Meter",
+                    "title": FUN_TITLE,
                     "payload": "{}".format(FUN)}
                    ]
         if user['captain'] >= 0:
             options.append({"content_type": "text",
-                            "title": "Submit Score",
+                            "title": SUBMIT_SCORE_TITLE,
                             "payload": "{}".format(GAMES)},)
         callback(random_intro(), sender_id, quick_replies=options)
 
@@ -434,14 +430,12 @@ def display_homeruns(user, sender_id, callback=send_message):
                             "title": player['player_name'],
                             "payload": player['player_id']})
     options.append({"type": "postback",
-                    "title": "Done",
+                    "title": DONE_COMMENT,
                     "payload": "done"})
     options.append({"type": "postback",
-                    "title": "Cancel",
+                    "title": CANCEL_COMMENT,
                     "payload": "cancel"})
-    callback("Pick a batter \n who hit a hr:",
-             sender_id,
-             buttons=options)
+    callback(PICKBATTER_COMMENT.format("hr"), sender_id, buttons=options)
 
 
 def display_ss(user, sender_id, callback=send_message):
@@ -455,14 +449,12 @@ def display_ss(user, sender_id, callback=send_message):
                             "title": player['player_name'],
                             "payload": player['player_id']})
     options.append({"type": "postback",
-                    "title": "Done",
+                    "title": DONE_COMMENT,
                     "payload": "done"})
     options.append({"type": "postback",
-                    "title": "Cancel",
+                    "title": CANCEL_COMMENT,
                     "payload": "cancel"})
-    callback("Pick a batter \n who hit a ss:",
-             sender_id,
-             buttons=options)
+    callback(PICKBATTER_COMMENT.format("ss"), sender_id, buttons=options)
 
 
 def display_upcoming_games(user, sender_id, callback=send_message):
@@ -478,10 +470,9 @@ def display_upcoming_games(user, sender_id, callback=send_message):
     for game in games:
         comments.append(format_game(game))
     if (len(comments)) > 0:
-        callback("\n".join(comments),
-                 sender_id)
+        callback("\n".join(comments), sender_id)
     else:
-        callback("No upcoming games", sender_id)
+        callback(NOGAMES_COMMENT, sender_id)
 
 
 def display_games(user, sender_id, callback=send_message):
@@ -499,13 +490,11 @@ def display_games(user, sender_id, callback=send_message):
                               "title": format_game(game),
                               "payload": game['game_id']})
     quick_replies.append({'content_type': "text",
-                          "title": "Cancel",
+                          "title": CANCEL_COMMENT,
                           "payload": "cancel"})
     user['state'] = GAMES
     save_user(user, mongo)
-    callback("Pick a game to submit score for",
-             sender_id,
-             quick_replies=quick_replies)
+    callback(PICKGAME_COMMENT, sender_id, quick_replies=quick_replies)
 
 
 def display_league_leaders(user, sender_id, callback=send_message):
@@ -517,14 +506,14 @@ def display_league_leaders(user, sender_id, callback=send_message):
         callback: the thing to call with a result (function)
     """
     leaders = league_leaders("hr")
-    comment = ["HR Leaders:"]
+    comment = [HR_TITLE]
     for leader in leaders:
         comment.append("{} ({}): {:d}".format(leader['name'],
                                               leader['team'],
                                               leader['hits']))
     callback("\n".join(comment), sender_id)
     leaders = league_leaders("ss")
-    comment = ["SS Leaders:"]
+    comment = [SS_TITLE]
     for leader in leaders:
         comment.append("{} ({}): {:d}".format(leader['name'],
                                               leader['team'],
@@ -547,7 +536,7 @@ def display_fun(user, sender_id, callback=send_message):
             count = element['count']
     message = count * random_emoji()
     message += "\n" + random_fun_comment()
-    message += "\n" + "Total fun: {}".format(count)
+    message += "\n" + FUN_TOTAL_COMMENT.format(count)
     callback(message, sender_id)
 
 
@@ -561,12 +550,12 @@ def display_summary(user, sender_id, callback=send_message):
     """
     summary = game_summary(user)
     replies = [{'content_type': "text",
-                "title": "Submit",
+                "title": SUBMIT_TITLE,
                 "payload": "submit",
                 "image_url":
                 "http://www.clker.com/cliparts/Z/n/g/w/C/y/green-dot-md.png"},
                {'content_type': "text",
-                "title": "Cancel",
+                "title": CANCEL_COMMENT,
                 "payload": "cancel",
                 "image_url":
                 "http://www.clker.com/cliparts/T/G/b/7/r/A/red-dot-md.png"},
@@ -601,23 +590,20 @@ def determine_player(user, sender_id, callback=send_message):
     if player is None:
         user['state'] = EMAIL
         save_user(user, mongo)
-        callback("What's your email associated with the league",
-                 sender_id)
+        callback(ASK_EMAIL_COMMENT, sender_id)
     else:
         # know these person
         if already_in_league(user, player, mongo):
             # imposter or someone stole their info
-            callback("Someone already appears to be you, contact admin",
-                     sender_id)
+            callback(IDENTITY_STOLEN_COMMENT, sender_id)
             user["state"] = IGNORE
             save_user(user, mongo)
         else:
             user = update_player(user, player)
             user['state'] = BASE
             save_user(user, mongo)
-            callback("Welcome to the league", sender_id)
-            callback("If you ever need help just type: HELP",
-                     sender_id)
+            callback(WELCOME_LEAGUE.format(user['name']), sender_id)
+            callback(HELP_COMMENT, sender_id)
             base_options(user, sender_id, callback=callback)
 
 
@@ -637,26 +623,23 @@ def check_email(user, message, sender_id, callback=send_message):
             break
     if email != "":
         try:
-            player = lookup_player_email(user, email)
+            player = lookup_player_email(user, email.lower())
             if already_in_league(user, player, mongo):
                 # imposter or someone stole their info
-                callback("Someone already appears to be you, contact admin",
-                         sender_id)
+                callback(IDENTITY_STOLEN_COMMENT, sender_id)
                 user["state"] = IGNORE
                 save_user(user, mongo)
             else:
                 user = update_player(user, player)
                 user['state'] = BASE
                 save_user(user, mongo)
-                callback("Welcome to the league", sender_id)
-                callback("If you ever need help, just type: HELP",
-                         sender_id)
+                callback(WELCOME_LEAGUE.format(user['name']), sender_id)
+                callback(HELP_COMMENT, sender_id)
                 base_options(user, sender_id, callback=callback)
         except IdentityException:
-            callback("Looks like your email is not recorded, contact admin",
-                     sender_id)
+            callback(NOT_FOUND_COMMENT, sender_id)
     else:
-        callback("No email was given, (looking for @)", sender_id)
+        callback(NO_EMAIL_GIVEN_COMMENT, sender_id)
 
 
 def help_user(user, sender_id, callback=send_message):
@@ -668,28 +651,21 @@ def help_user(user, sender_id, callback=send_message):
         callback: the thing to call with a result (function)
     """
     if user['state'] == BASE:
-        options = ["Upcoming games: Find out what games you have upcoming",
-                   "League leaders: who leading the league",
-                   "Events: what are the events for this year",
-                   "Fun meter: how much fun has this summer been",
-                   "Submit score: if you are captain submit a score"]
-        callback("\n".join(options), sender_id)
+        callback("\n".join(BASE_HELP_OPTIONS), sender_id)
         figure_out(user, "", None, sender_id, callback=callback)
     elif user['state'] == HR_BAT:
-        callback("Who hit a HR, if you dont see a player contact admin",
+        callback(HR_BAT_HELP_COMMENT,
                  sender_id)
         display_homeruns(user, sender_id, callback=callback)
     elif user['state'] == SS_BAT:
-        m = ("Who hit a SS (only females)," +
-             " if you don't see a player contact admin")
+        m = ()
         callback(m, sender_id)
         display_ss(user, sender_id, callback=callback)
     elif user['state'] == HR_NUM:
-        callback("Select a batter who hit a homerun", sender_id)
+        callback(HR_NUM_HELP_COMMENT, sender_id)
         display_homeruns(user, sender_id, callback=callback)
     elif user['state'] == SS_NUM:
-        m = "Pick a girl who hit the ball to the grass in the air (no bounce)"
-        callback(m, sender_id, callback=callback)
+        callback(SS_NUM_HELP_COMMENT, sender_id, callback=callback)
 
 
 def parse_number(text):
@@ -697,7 +673,7 @@ def parse_number(text):
     """
     if type(text) is str:
         tokens = text.split(" ")
-        number = 0
+        number = -1
         for token in tokens:
             try:
                 number = int(token)
@@ -705,7 +681,7 @@ def parse_number(text):
             except ValueError:
                 pass
     else:
-        number = 0
+        number = -1
         try:
             number = int(text)
         except ValueError:
@@ -727,16 +703,15 @@ def update_payload(user,
     """
     if user['state'] == BASE:
         # quite a few options
-        number = parse_number(payload)
-        if number == GAMES:
+        if payload == GAMES:
             display_games(user, sender_id, callback=callback)
-        elif number == UPCOMING:
+        elif payload == UPCOMING:
             display_upcoming_games(user, sender_id, callback=callback)
-        elif number == FUN:
+        elif payload == FUN:
             display_fun(user, sender_id, callback=callback)
-        elif number == LEADERS:
+        elif payload == LEADERS:
             display_league_leaders(user, sender_id, callback=callback)
-        elif number == EVENTS:
+        elif payload == EVENTS:
             display_events(user, sender_id, callback=callback)
     elif user['state'] == GAMES:
         game = parse_number(payload)
@@ -744,11 +719,11 @@ def update_payload(user,
             user = add_game(user, game)
             user['state'] = SCORE
             save_user(user, mongo)
-            callback("What was the score?", sender_id)
+            callback(SCORE_COMMENT, sender_id)
         else:
             user['state'] = BASE
             save_user(user, mongo)
-            callback("The game was not valid", sender_id)
+            callback(INVALID_GAME_COMMENT, sender_id)
     elif user['state'] == HR_BAT:
         batter = parse_number(payload)
         if batter > 0:
@@ -757,22 +732,21 @@ def update_payload(user,
                 user['state'] = HR_NUM
                 save_user(user, mongo)
                 pname = user['teamroster'][str(batter)]['player_name']
-                message = "How many did hrs  did {}  hit?".format(pname)
+                message = HIT_NUM_COMMENT.format("hr", pname)
                 callback(message, sender_id)
             except BatterException:
-                callback("Batter was not on teamroster", sender_id)
+                callback(INVALID_BATTER_COMMENT, sender_id)
                 display_homeruns(user, sender_id, callback=callback)
-        elif payload.lower() == "done":
+        elif payload.lower() in ["done", "ok", DONE_COMMENT.lower()]:
             user['state'] = SS_BAT
-            display_ss(user, sender_id, callback=callback)
             save_user(user, mongo)
             display_ss(user, sender_id, callback=callback)
-        elif payload.lower() == "cancel":
+        elif payload.lower() in ["cancel", "no", CANCEL_COMMENT.lower()]:
             user['state'] = BASE
             save_user(user, mongo)
-            callback("Canceling", sender_id)
+            callback(CANCELING_COMMENT, sender_id)
         else:
-            callback("The game was not valid", sender_id)
+            callback(INVALID_GAME_COMMENT, sender_id)
     elif user['state'] == SS_BAT:
         batter = parse_number(payload)
         if batter > 0:
@@ -781,10 +755,10 @@ def update_payload(user,
                 user['state'] = SS_NUM
                 save_user(user, mongo)
                 pname = user['teamroster'][str(batter)]['player_name']
-                message = "How many did ss did {}  hit?".format(pname)
+                message = HIT_NUM_COMMENT.format("ss", pname)
                 callback(message, sender_id)
             except BatterException:
-                callback("Batter was not on the team roster", sender_id)
+                callback(INVALID_BATTER_COMMENT, sender_id)
                 display_ss(user, sender_id, callback=callback)
         elif payload == "done":
             user['state'] = REVIEW
@@ -793,9 +767,9 @@ def update_payload(user,
         elif payload.lower() == "cancel":
             user['state'] = BASE
             save_user(user, mongo)
-            callback("Canceling", sender_id)
+            callback(CANCELING_COMMENT, sender_id)
         else:
-            callback("The game was not valid", sender_id)
+            callback(INVALID_GAME_COMMENT, sender_id)
 
 
 def figure_out(user, message_text, payload, sender_id, callback=send_message):
@@ -831,15 +805,18 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
             else:
                 base_options(user, sender_id, callback=callback)
         elif user['state'] == GAMES:
-            if message_text.lower() in ["cancel", "nvm", "no"]:
+            if message_text.lower() in ["cancel",
+                                        "nvm",
+                                        "no",
+                                        CANCEL_COMMENT.lower()]:
                 user['state'] = BASE
                 save_user(user, mongo)
-                callback("Canceling", sender_id)
+                callback(CANCELING_COMMENT, sender_id)
                 base_options(user, sender_id, callback=callback)
             elif payload is None:
                 user['state'] = BASE
                 save_user(user, mongo)
-                callback("Need to use the quick replies", sender_id)
+                callback(USE_QUICK_REPLIES_COMMENT, sender_id)
                 update_payload(user, GAMES, sender_id, callback=callback)
             else:
                 game = parse_number(payload)
@@ -847,30 +824,38 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
                     user = add_game(user, game)
                     user['state'] = SCORE
                     save_user(user, mongo)
-                    callback("What was the score?", sender_id)
-                elif payload.lower in ("cancel", "no"):
+                    callback(SCORE_COMMENT, sender_id)
+                elif payload.lower() in ("cancel",
+                                         "no",
+                                         CANCEL_COMMENT.lower()):
                     user['state'] = BASE
                     save_user(user, mongo)
                     base_options(user, sender_id, callback=callback)
                 else:
-                    callback("Couldnt find the game number in repsonse",
-                             sender_id)
+                    callback(NEED_GAME_NUMBER_COMMENT, sender_id)
                     user['state'] = BASE
                     save_user(user, mongo)
         elif user['state'] == SCORE:
             score = parse_number(message_text)
-            if score == 0:
+            if message_text.lower() in ["cancel",
+                                        "nvm",
+                                        "no",
+                                        CANCEL_COMMENT.lower()]:
+                user['state'] = BASE
+                save_user(user, mongo)
+                base_options(user, sender_id, callback=callback)
+            elif score < 0:
+                # said something random
+                callback(DIDNT_UNDERSTAND_COMMENT, sender_id)
+                callback(SCORE_COMMENT, sender_id)
+            elif score == 0:
                 # skip homeruns
-                log(user)
                 user = add_score(user, score)
-                log(user)
                 user['state'] = SS_BAT
                 save_user(user, mongo)
                 display_ss(user, sender_id, callback=callback)
             else:
-                log(user)
                 user = add_score(user, score)
-                log(user)
                 user['state'] = HR_BAT
                 save_user(user, mongo)
                 display_homeruns(user, sender_id, callback=callback)
@@ -887,9 +872,9 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
                     len(user['game']['hr']) + number < user['game']['score']):
                     user = add_homeruns(user, user['batter'], number)
                 elif len(user['game']['hr']) + number > user['game']['score']:
-                    callback("More hr(s) than runs scored", sender_id)
+                    callback(TOO_MANY_HR_COMMENT, sender_id)
                 else:
-                    callback("Didn't understand how many", sender_id)
+                    callback(DIDNT_UNDERSTAND_COMMENT, sender_id)
                 # move back to batter
                 user['state'] = HR_BAT
                 save_user(user, mongo)
@@ -899,21 +884,27 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
             if number > 0:
                 user = add_ss(user, user['batter'], number)
             else:
-                callback("Didn't understand how many", sender_id)
+                callback(DIDNT_UNDERSTAND_COMMENT, sender_id)
             # move back to batter
             user['state'] = SS_BAT
             save_user(user, mongo)
             display_ss(user, sender_id, callback=callback)
         elif user['state'] == REVIEW:
-            if (message_text.lower() in ("yes", "submit") or
-                payload.lower() in ("submit", "yes")):
+            if (message_text.lower() in ("yes",
+                                         "submit",
+                                         SUBMIT_TITLE.lower(),
+                                         SUBMIT_SCORE_TITLE.lower()) or
+                payload.lower() in ("submit",
+                                    "yes",
+                                    SUBMIT_TITLE.lower(),
+                                    SUBMIT_SCORE_TITLE.lower())):
                 # save the score
                 user = submit_score(user)
-                callback("Game submitted", sender_id)
+                callback(GAME_SUBMITTED_COMMENT, sender_id)
             else:
                 # guess they are cancelling
                 user['game'] = {}
-                callback("Cancelling", sender_id)
+                callback(CANCELING_COMMENT, sender_id)
             user['state'] = BASE
             save_user(user, mongo)
 
@@ -950,26 +941,6 @@ def basic_response(message, sender_id, callback=send_message):
         pick_proposition = proposition[randint(0, len(proposition) - 1)]
         response = pick_proposition
         callback(response.strip(), sender_id)
-
-
-def mock_callback(message_text, sender_id, quick_replies=[]):
-    """Mock the callback function
-
-    Parameters:
-        message_text: the message received (string)
-        sender_id: the facebook id (?)
-        callback: the thing to call with a result (function)
-    """
-    log(message_text)
-    log(quick_replies)
-
-
-class TestFunctions(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
 
 
 if __name__ == "__main__":
