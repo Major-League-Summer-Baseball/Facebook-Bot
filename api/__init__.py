@@ -38,6 +38,7 @@ from api.db import get_user, lookup_player, save_user, update_player,\
     submit_score, get_games, get_upcoming_games, league_leaders, add_game,\
     change_batter, fun_meter, get_events, game_summary
 
+
 @app.route('/', methods=['GET'])
 def verify():
     # when the endpoint is registered as a webhook, it must echo back
@@ -941,6 +942,13 @@ def basic_response(message, sender_id, callback=send_message):
         pick_proposition = proposition[randint(0, len(proposition) - 1)]
         response = pick_proposition
         callback(response.strip(), sender_id)
+
+
+def change_mongo(m):
+    """Used for testing
+    """
+    global mongo
+    mongo = m
 
 
 if __name__ == "__main__":

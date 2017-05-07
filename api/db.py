@@ -13,7 +13,6 @@ from api.errors import FacebookException, PlatformException,\
 from api.variables import PID, HEADERS, BASEURL, PAGE_ACCESS_TOKEN
 
 
-
 def get_user(identity, mongo):
     """ Returns if a user exists and creates one if if they dont
 
@@ -146,7 +145,6 @@ def update_player(user, player):
     # now look up teams
     captain = -1
     teams = r.json()
-    log(teams)
     for team in teams:
         if team['captain']['player_id'] == user['pid']:
             captain = team["team_id"]
@@ -222,12 +220,9 @@ def get_games(user):
         games: a list of games
     """
     params = {"player_id": user['pid'], "team": user['captain']}
-    log(params)
     r = requests.post(BASEURL + "api/bot/captain/games",
                       data=params,
                       headers=HEADERS)
-    log(r)
-    log(r.text)
     if (r.status_code == 401):
         log(r.text)
         raise NotCaptainException("Says you are not a captain, check admin")
@@ -299,7 +294,6 @@ def add_game(user, game_id):
     players = r.json()['players']
     for player in players:
         user['teamroster'][str(player['player_id'])] = player
-    log(user['teamroster'])
     return user
 
 
@@ -694,9 +688,6 @@ class TestRequests(unittest.TestCase):
                    'team': 'CaliBurger Test',
                    'team_id': 1,
                    'id': 2}]
-
-        log(leaders)
-        log(expect)
         self.assertEqual(leaders, expect)
 
 
@@ -743,15 +734,15 @@ class TestUpcomingGames(unittest.TestCase):
                      'captain': -1}
         games = get_upcoming_games(self.user)
         expect = {'away_team_id': 2,
-                   'game_id': self.game_id,
-                   'league_id': 1,
-                   'home_team': 'CaliBurger Test',
-                   'time': '23:59',
-                   'field': 'WP1',
-                   'date': self.d,
-                   'away_team': 'CaliBurger Test2',
-                   'status': '',
-                   'home_team_id': 1}
+                  'game_id': self.game_id,
+                  'league_id': 1,
+                  'home_team': 'CaliBurger Test',
+                  'time': '23:59',
+                  'field': 'WP1',
+                  'date': self.d,
+                  'away_team': 'CaliBurger Test2',
+                  'status': '',
+                  'home_team_id': 1}
         for game in games:
             if game == expect:
                 found = True

@@ -44,12 +44,11 @@ FALLBACK = "Try sending an email, if you have a question the bot cant handle"
 NO_EMAIL_GIVEN_COMMENT = "No email was given, (looking for @)"
 ASK_EMAIL_COMMENT = "What's your email associated with the league"
 SCORE_COMMENT = "How many runs did you score? \n Just type a number Eg. 1"
-HIT_NUM_COMMENT = "How many did {}  did {}  hit?"
+HIT_NUM_COMMENT = "How many {}  did {}  hit?"
 CANCELING_COMMENT = "Canceling"
 USE_QUICK_REPLIES_COMMENT = "Need to use the quick replies"
 NEED_GAME_NUMBER_COMMENT = "Couldnt find the game number in repsonse"
 GAME_SUBMITTED_COMMENT = "Game submitted"
-
 # error comments
 INVALID_GAME_COMMENT = "The game was not valid"
 INVALID_BATTER_COMMENT = "Batter was not on teamroster"
