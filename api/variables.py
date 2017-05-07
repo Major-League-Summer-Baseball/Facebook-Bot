@@ -18,10 +18,10 @@ else:
     from api.credentials import BASEURL, URL, ADMIN, PASSWORD,\
                                 PAGE_ACCESS_TOKEN, VERIFY_TOKEN
 HEADERS = {
-            'Authorization': 'Basic %s' % b64encode(bytes(ADMIN + ':' +
-                                                          PASSWORD, "utf-8")
-                                                    ).decode("ascii")
-           }
+    'Authorization': 'Basic %s' % b64encode(bytes(ADMIN + ':' +
+                                                  PASSWORD, "utf-8")
+                                            ).decode("ascii")
+}
 # main menu title
 UPCOMING_TITLE = "Upcoming Games"
 LEAGUE_LEADERS_TITLE = "League Leaders"
