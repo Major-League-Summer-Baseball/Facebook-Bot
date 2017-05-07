@@ -20,12 +20,8 @@ from api.errors import FacebookException, IdentityException,\
     BatterException
 from random import randint
 from base64 import b64encode
-from sqlalchemy.ext.mutable import Mutable
 from api.variables import *
 import unittest
-from nltk.misc.sort import quick
-from lib2to3.pytree import Base
-from future.backports.http.client import NOT_FOUND
 
 app = Flask(__name__)
 app.config['MONGO_URI'] = URL
