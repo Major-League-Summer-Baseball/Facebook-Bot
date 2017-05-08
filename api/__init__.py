@@ -252,10 +252,15 @@ def webhook():
                         typing_on(sender_id)
                         (user, created) = get_user(sender_id, mongo)
                         if created:
+                            log("First Time messaged")
+                            log(user)
                             determine_player(user, sender_id)
+                            log(user)
                         else:
+                            log(user)
                             payload = get_payload(messaging_event)
                             figure_out(user, message_text, payload, sender_id)
+                            log(user)
                     if messaging_event.get("delivery"):
                         # delivery confirmation
                         pass
@@ -271,10 +276,12 @@ def webhook():
                         # the message's text
                         pay = get_postback_payload(messaging_event)
                         if pay is not None:
+                            log(user)
                             (user, created) = get_user(sender_id, mongo)
                             update_payload(user,
                                            pay,
                                            sender_id)
+                            log(user)
                 except FacebookException as e:
                     log(str(e))
                     sender_id = messaging_event["sender"]["id"]
@@ -582,9 +589,7 @@ def determine_player(user, sender_id, callback=send_message):
         sender_id: the sender facebook id (? something)
         callback: the thing to call with a result (function)
     """
-    log(user)
     player = lookup_player(user)
-    log(player)
     if player is None:
         user['state'] = EMAIL
         save_user(user, mongo)
@@ -781,7 +786,6 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
         help_user(user, sender_id, callback=callback)
     else:
         if user['state'] == PID:
-            log(user)
             determine_player(user, sender_id, callback=callback)
         elif user['state'] == EMAIL:
             check_email(user, message_text, sender_id, callback=callback)
@@ -933,9 +937,7 @@ def basic_response(message, sender_id, callback=send_message):
         sender_id: the facebook id (?)
         callback: the thing to call with a result (function)
     """
-    log(message)
     if re.search("who(\s?)('s)*the(\s?)best", message):
-        log("Hit")
         response = "Obviously the Maple Leafs"
         callback(response.strip(), sender_id)
     elif re.search(r"would(\s?)you(\s?)rather", message):

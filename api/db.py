@@ -88,11 +88,9 @@ def lookup_player(user):
     r = requests.post(BASEURL + "api/view/player_lookup",
                       params=submission,
                       headers=HEADERS)
-    log("User look up")
     players = r.json()
     if (r.status_code != 200):
         raise PlatformException(PLATFORMMESSAGE)
-    log(r.json())
     if len(players) == 0 or len(players) > 1:
         player = None
     else:
@@ -116,10 +114,8 @@ def lookup_player_email(user, email):
     r = requests.post(BASEURL + "api/view/player_lookup",
                       params=submission,
                       headers=HEADERS)
-    log("User look up")
     if(r.status_code != 200):
         raise PlatformException(PLATFORMMESSAGE)
-    log(r.json())
     players = r.json()
     if len(players) == 0:
         raise IdentityException("Not sure who you are, ask admin")
@@ -224,11 +220,8 @@ def get_games(user):
                       data=params,
                       headers=HEADERS)
     if (r.status_code == 401):
-        log(r.text)
         raise NotCaptainException("Says you are not a captain, check admin")
     elif (r.status_code != 200):
-            log(r.text)
-            log(r.status_code)
             d = loads(r.text)
             if d['status_code'] == 401 or d['status_code'] == 404:
                 m = "Says you are not a captain, check admin"
