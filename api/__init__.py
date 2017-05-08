@@ -14,7 +14,7 @@ from api.helper import log
 from flask import Flask, request
 import random
 import traceback
-from flask.ext.pymongo import PyMongo
+from flask_pymongo import PyMongo
 from api.errors import FacebookException, IdentityException,\
     MultiplePlayersException, PlatformException, NotCaptainException,\
     BatterException
