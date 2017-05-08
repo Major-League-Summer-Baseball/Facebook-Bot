@@ -599,6 +599,7 @@ def determine_player(user, sender_id, callback=send_message):
         callback: the thing to call with a result (function)
     """
     player = lookup_player(user)
+    log(player)
     if player is None:
         user['state'] = EMAIL
         save_user(user, mongo)
