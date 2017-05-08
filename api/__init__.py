@@ -251,8 +251,8 @@ def webhook():
                             parse_message(message_text, sender_id)
                         typing_on(sender_id)
                         (user, created) = get_user(sender_id, mongo)
-                        if created:
-                            log("First Time messaged")
+                        if created or user["pid"] < 0:
+                            log("Trying to figure you out")
                             log(user)
                             determine_player(user, sender_id)
                             log(user)
@@ -296,16 +296,25 @@ def webhook():
                 except PlatformException as e:
                     sender_id = messaging_event["sender"]["id"]
                     (user, created) = get_user(sender_id, mongo)
-                    user['state'] = BASE
-                    save_user(user, mongo)
+                    if user['pid'] > 0:
+                        user['state'] = BASE
+                        save_user(user, mongo)
+                    else:
+                        # dont know who this is
+                        user['state'] = PID
+                        save_user(user, mongo)
                     log(str(e))
                     send_message(str(e), sender_id)
                 except Exception as e:
                     traceback.print_exc()
                     sender_id = messaging_event["sender"]["id"]
                     log(str(e))
-                    user['state'] = BASE
-                    save_user(user, mongo)
+                    if user["pid"] > 0:
+                        user['state'] = BASE
+                        save_user(user, mongo)
+                    else:
+                        user['state'] = PID
+                        save_user(user, mongo)
                     send_message("Something fucked up, let an admin know",
                                  sender_id)
     return "ok", 200
