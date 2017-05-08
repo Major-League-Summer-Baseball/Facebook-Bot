@@ -276,8 +276,8 @@ def webhook():
                         # the message's text
                         pay = get_postback_payload(messaging_event)
                         if pay is not None:
-                            log(user)
                             (user, created) = get_user(sender_id, mongo)
+                            log(user)
                             update_payload(user,
                                            pay,
                                            sender_id)
