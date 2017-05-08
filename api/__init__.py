@@ -438,7 +438,6 @@ def display_homeruns(user, sender_id, callback=send_message):
 def display_ss(user, sender_id, callback=send_message):
     """Display the batters for ss"""
     options = []
-    log(user)
     for player_id, player in user['teamroster'].items():
         if (player['gender'].lower() == "f" and
             player['player_id'] not in user['game']['ss']):
@@ -571,7 +570,7 @@ def display_events(user, sender_id, callback=send_message):
     events = get_events()
     message = []
     for event, date in events.items():
-        message.append("{} - {}".format(event.replace("_", ""), date))
+        message.append("{} - {}".format(event.replace("_", " "), date))
     callback("\n".join(message), sender_id)
 
 
@@ -583,7 +582,9 @@ def determine_player(user, sender_id, callback=send_message):
         sender_id: the sender facebook id (? something)
         callback: the thing to call with a result (function)
     """
+    log(user)
     player = lookup_player(user)
+    log(player)
     if player is None:
         user['state'] = EMAIL
         save_user(user, mongo)
@@ -655,14 +656,12 @@ def help_user(user, sender_id, callback=send_message):
                  sender_id)
         display_homeruns(user, sender_id, callback=callback)
     elif user['state'] == SS_BAT:
-        m = ()
-        callback(m, sender_id)
+        callback(SS_BAT_HELP_COMMENT, sender_id)
         display_ss(user, sender_id, callback=callback)
     elif user['state'] == HR_NUM:
         callback(HR_NUM_HELP_COMMENT, sender_id)
-        display_homeruns(user, sender_id, callback=callback)
     elif user['state'] == SS_NUM:
-        callback(SS_NUM_HELP_COMMENT, sender_id, callback=callback)
+        callback(SS_NUM_HELP_COMMENT, sender_id)
 
 
 def parse_number(text):
@@ -743,7 +742,7 @@ def update_payload(user,
             save_user(user, mongo)
             callback(CANCELING_COMMENT, sender_id)
         else:
-            callback(INVALID_GAME_COMMENT, sender_id)
+            callback(INVALID_BATTER_COMMENT, sender_id)
     elif user['state'] == SS_BAT:
         batter = parse_number(payload)
         if batter > 0:
@@ -766,7 +765,7 @@ def update_payload(user,
             save_user(user, mongo)
             callback(CANCELING_COMMENT, sender_id)
         else:
-            callback(INVALID_GAME_COMMENT, sender_id)
+            callback(INVALID_BATTER_COMMENT, sender_id)
 
 
 def figure_out(user, message_text, payload, sender_id, callback=send_message):
@@ -782,22 +781,29 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
         help_user(user, sender_id, callback=callback)
     else:
         if user['state'] == PID:
+            log(user)
             determine_player(user, sender_id, callback=callback)
         elif user['state'] == EMAIL:
             check_email(user, message_text, sender_id, callback=callback)
         elif user['state'] == BASE:
             # support if they just type of the things
+            print()
             if payload is None:
                 payload = ""
-            if "upcoming games" in (message_text.lower(), payload.lower()):
+            options = (message_text.lower(), payload.lower())
+            if (UPCOMING.lower() in options or
+                UPCOMING_TITLE.lower() in options):
                 update_payload(user, UPCOMING, sender_id, callback=callback)
-            elif "league leaders" in (message_text.lower(), payload.lower()):
+            elif (LEADERS.lower() in options or
+                  LEAGUE_LEADERS_TITLE.lower() in options):
                 update_payload(user, LEADERS, sender_id, callback=callback)
-            elif "events" in (message_text.lower(), payload.lower()):
+            elif EVENTS.lower() in options or EVENTS_TITLE.lower() in options:
                 update_payload(user, EVENTS, sender_id, callback=callback)
-            elif "fun meter" in (message_text.lower(), payload.lower()):
+            elif FUN.lower() in options or FUN_TITLE.lower() in options:
                 update_payload(user, FUN, sender_id, callback=callback)
-            elif "submit score" in (message_text.lower(), payload.lower()):
+            elif (SUBMIT_SCORE_TITLE.lower() in options or
+                  "submit score" in options or GAMES.lower() in options):
+                print("yep")
                 update_payload(user, GAMES, sender_id, callback=callback)
             else:
                 base_options(user, sender_id, callback=callback)
@@ -865,13 +871,12 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
                 save_user(user, mongo)
                 display_ss(user, sender_id, callback=callback)
             else:
-                if (number > 0 and
-                    len(user['game']['hr']) + number < user['game']['score']):
-                    user = add_homeruns(user, user['batter'], number)
-                elif len(user['game']['hr']) + number > user['game']['score']:
-                    callback(TOO_MANY_HR_COMMENT, sender_id)
-                else:
+                if number < 0:
                     callback(DIDNT_UNDERSTAND_COMMENT, sender_id)
+                elif len(user['game']['hr']) + number < user['game']['score']:
+                    user = add_homeruns(user, user['batter'], number)
+                else:
+                    callback(TOO_MANY_HR_COMMENT, sender_id)
                 # move back to batter
                 user['state'] = HR_BAT
                 save_user(user, mongo)
@@ -887,6 +892,8 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
             save_user(user, mongo)
             display_ss(user, sender_id, callback=callback)
         elif user['state'] == REVIEW:
+            if payload is None:
+                payload = ""
             if (message_text.lower() in ("yes",
                                          "submit",
                                          SUBMIT_TITLE.lower(),

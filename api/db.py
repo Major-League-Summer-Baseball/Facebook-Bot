@@ -234,7 +234,6 @@ def get_games(user):
                 m = "Says you are not a captain, check admin"
                 raise NotCaptainException(m)
             else:
-
                 raise PlatformException(PLATFORMMESSAGE)
     games = r.json()
     return games
@@ -253,10 +252,16 @@ def submit_score(user):
     r = requests.post(BASEURL + "api/bot/submit_score",
                       params=submission,
                       headers=HEADERS)
+    print(r.text, r.status_code)
     if (r.status_code == 401):
         raise NotCaptainException("Says you are not the captain, ask admin")
     elif (r.status_code != 200):
-        raise PlatformException(PLATFORMMESSAGE)
+        d = loads(r.text)
+        if d['status_code'] == 401 or d['status_code'] == 404:
+            m = "Says you are not a captain, check admin"
+            raise NotCaptainException(m)
+        else:
+            raise PlatformException(PLATFORMMESSAGE)
     # remove the data since not relevant
     user['game'] = {}
     return user
@@ -546,7 +551,6 @@ class TestRequests(unittest.TestCase):
         except NotCaptainException as e:
             pass
 
-
     def testUpdatePlayer(self):
         # is a captain
         self.user = {'pid': -1,
@@ -661,8 +665,7 @@ class TestRequests(unittest.TestCase):
 
     def testGetEvents(self):
         events = get_events()
-        expect = {'Jays_Game': 'May 9th'}
-        self.assertEqual(events, expect)
+        self.assertEqual("Jays_Game" in events.keys(), True)
 
     def testFunMeter(self):
         fun = fun_meter()

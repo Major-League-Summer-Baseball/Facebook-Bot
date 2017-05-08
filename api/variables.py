@@ -64,8 +64,8 @@ BASE_HELP_OPTIONS = ["Upcoming games: Find out what games you have upcoming",
                      "Submit score: if you are captain submit a score"]
 HR_BAT_HELP_COMMENT = "Who hit a {}, \n if you dont see a player contact admin"
 SS_BAT_HELP_COMMENT = "Who hit a SS (only females), \n if you don't see a player contact admin"
-HR_NUM_HELP_COMMENT = "Select a batter who hit a homerun"
-SS_NUM_HELP_COMMENT = "Pick a girl who hit the ball to the grass in the air (no bounce)"
+HR_NUM_HELP_COMMENT = "Enter the number of homeruns they hit:"
+SS_NUM_HELP_COMMENT = "Enter the number of ss they hit: \n where a ss is a single that lands in the grass (females) \n no bounce in the infield"
 INTROS = ["What do you want?",
           "Well, hello there",
           "DAM Daniel!!, how you doing?",
