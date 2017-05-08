@@ -254,7 +254,10 @@ def webhook():
                         if created or user["pid"] < 0:
                             log("Trying to figure you out")
                             log(user)
-                            determine_player(user, sender_id)
+                            if user["pid"] == PID:
+                                determine_player(user, sender_id)
+                            elif user["pid"] == EMAIL:
+                                check_email(user, message_text, sender_id)
                             log(user)
                         else:
                             log(user)
