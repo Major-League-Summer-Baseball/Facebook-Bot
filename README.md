@@ -1,2 +1,2 @@
-# resume
-Playing with facebook bot.
+# Facebook Captains Bot
+Allows captains to submit their scores
