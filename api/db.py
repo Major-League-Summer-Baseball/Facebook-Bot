@@ -359,7 +359,7 @@ def game_summary(user):
     # pair ss with their names and count
     ss = {}
     for pid in user['game']['ss']:
-        if pid not in hrs.keys():
+        if pid not in ss.keys():
             ss[pid] = {"count": 1,
                        "name": user['teamroster'][str(pid)]['player_name']}
         else:
