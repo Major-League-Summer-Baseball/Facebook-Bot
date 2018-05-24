@@ -142,7 +142,8 @@ def update_player(user, player):
     captain = -1
     teams = r.json()
     for team in teams:
-        if team['captain']['player_id'] == user['pid']:
+        if (team['captain'] != None and
+            team['captain']['player_id'] == user['pid']):
             captain = team["team_id"]
     user['captain'] = captain
     return user
