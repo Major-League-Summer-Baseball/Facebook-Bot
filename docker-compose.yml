@@ -32,13 +32,16 @@ services:
       image: mongo:latest
       container_name: "mongodb"
       environment:
+       - MONGO_INITDB_ROOT_USERNAME=$DBUSER
+       - MONGO_INITDB_ROOT_PASSWORD=$DBPW
+       - MONGO_INITDB_DATABASE=$DBNAME
        - MONGO_DATA_DIR=/usr/data/db
        - MONGO_LOG_DIR=/dev/null
       volumes:
-       - 'mongo:/data'
+       - 'mongodb:/data'
       ports:
        - 27017:27017
       command: mongod --smallfiles --logpath=/dev/null # --quiet
 
 volumes:
-    name: mongo
+    name: mongodb
