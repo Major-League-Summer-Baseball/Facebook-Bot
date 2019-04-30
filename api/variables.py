@@ -16,12 +16,13 @@ if os.environ.get("LOCAL", "TRUE") == "FALSE":
     VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN", "908sdamnsclk2190KSDJI")
 else:
     from api.credentials import BASEURL, URL, ADMIN, PASSWORD,\
-                                PAGE_ACCESS_TOKEN, VERIFY_TOKEN
+        PAGE_ACCESS_TOKEN, VERIFY_TOKEN
 HEADERS = {
     'Authorization': 'Basic %s' % b64encode(bytes(ADMIN + ':' +
                                                   PASSWORD, "utf-8")
                                             ).decode("ascii")
 }
+
 # main menu title
 UPCOMING_TITLE = "Upcoming Games"
 LEAGUE_LEADERS_TITLE = "League Leaders"
@@ -31,6 +32,7 @@ SUBMIT_SCORE_TITLE = "Submit Score"
 SUBMIT_TITLE = "Submit"
 HR_TITLE = "HR Leaders:"
 SS_TITLE = "SS Leaders:"
+
 # random comments
 FUN_TOTAL_COMMENT = "Total fun: {}"
 WELCOME_LEAGUE = "Welcome to the league: {}"
@@ -49,6 +51,12 @@ CANCELING_COMMENT = "Canceling"
 USE_QUICK_REPLIES_COMMENT = "Need to use the quick replies"
 NEED_GAME_NUMBER_COMMENT = "Couldnt find the game number in repsonse"
 GAME_SUBMITTED_COMMENT = "Game submitted"
+
+# facebook specific responses
+NO_OPTIONS_AVAILABLE = "There are no options available"
+SCROLL_FOR_MORE_OPTIONS = "Scroll right for more options"
+EVEN_MORE_OPTIONS = " Even more options"
+
 # error comments
 INVALID_GAME_COMMENT = "The game was not valid"
 INVALID_BATTER_COMMENT = "Batter was not on teamroster"
@@ -56,6 +64,7 @@ IDENTITY_STOLEN_COMMENT = "Someone already appears to be you, contact admin"
 NOT_FOUND_COMMENT = "Looks like your email is not recorded, contact admin"
 TOO_MANY_HR_COMMENT = "More hr(s) than runs scored"
 DIDNT_UNDERSTAND_COMMENT = "Didn't understand how many"
+
 # help comments
 BASE_HELP_OPTIONS = ["Upcoming games: Find out what games you have upcoming",
                      "League leaders: who leading the league",
@@ -95,6 +104,7 @@ FUN_COMMENT = ["",
                "",
                "What fun",
                "Are we having too fun?"]
+
 # the various states of the bot
 # these are not displayed to the user
 IGNORE = "Not part of league"
