@@ -8,10 +8,30 @@ import sys
 from json import loads as loader
 
 
+def parse_number(text):
+    """Returns the first number in the text"""
+    if type(text) is str:
+        tokens = text.split(" ")
+        number = -1
+        for token in tokens:
+            try:
+                number = int(token)
+                break
+            except ValueError:
+                pass
+    else:
+        number = -1
+        try:
+            number = int(text)
+        except ValueError:
+            pass
+    return number
+
+
 def loads(data):
     try:
         data = loader(data)
-    except:
+    except Exception as e:
         data = loader(data.decode('utf-8'))
     return data
 
