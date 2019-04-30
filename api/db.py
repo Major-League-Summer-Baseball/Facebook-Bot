@@ -8,13 +8,94 @@ import unittest
 from datetime import date, datetime
 from api.helper import log, loads
 from api.errors import FacebookException, PlatformException,\
-                       PLATFORMMESSAGE, NotCaptainException, IdentityException,\
-                       BatterException
+    PLATFORMMESSAGE, NotCaptainException, IdentityException,\
+    BatterException
 from api.variables import PID, HEADERS, BASEURL, PAGE_ACCESS_TOKEN
 
 
+class DatabaseService():
+
+    def __init__(self, mongo):
+        self.mongo = mongo
+
+    def get_user(self, facebook_id):
+        """Returns the user object for the given facebook id"""
+        return self.mongo.db.users.find_one({'facebook_id': facebook_id})
+
+    def create_user(self, facebook_id, name):
+        """Creates a user for the given facebook id with the given name"""
+        user = {"facebook_id": facebook_id, "facebook_name": name}
+        self.mongo.db.users.insert(user)
+        return user
+
+    def save_user(self, user):
+        self.mongo.db.users.save(user)
+
+    def already_in_league(user, player, mongo):
+        """Check if a player already in the league
+
+        Parameters:
+            user: the user dictionary (dict)
+            player: the player object
+            mongo: the mongo db
+        Returns
+            taken: True if someone already taken that player, False otherwise
+        """
+        taken = True
+        user = mongo.db.users.find_one({'pid': player['player_id']})
+        if user is None:
+            taken = False
+        return taken
+
+    def lookup_player(self, name):
+        """Returns a lookup for the player in the league
+
+        Parameter:
+            name: the name of the player to lookup (str)
+        Raises:
+            PlatformException: if platform gives an error
+        Returns:
+            player: None if can't determine player otherwise a player object
+        """
+        submission = {"player_name": name, "active": 1}
+        response = requests.post(BASEURL + "api/view/player_lookup",
+                                 params=submission,
+                                 headers=HEADERS)
+        players = response.json()
+        if (response.status_code != 200):
+            raise PlatformException(PLATFORMMESSAGE)
+        if len(players) == 0 or len(players) > 1:
+            player = None
+        else:
+            # we got him
+            player = players[0]
+        return player
+
+    def lookup_player_email(self, email):
+        """Returns a lookup for a player in the league using their email provided
+
+        Parameters:
+            user: the user dictionary (dict)
+            email: the email they given (string)
+        Raises:
+            IdentityException: if no one is found
+        Returns:
+            player: the player found
+        """
+        submission = {"email": email}
+        r = requests.post(BASEURL + "api/view/player_lookup",
+                          params=submission,
+                          headers=HEADERS)
+        if(r.status_code != 200):
+            raise PlatformException(PLATFORMMESSAGE)
+        players = r.json()
+        if len(players) == 0:
+            raise IdentityException("Not sure who you are, ask admin")
+        return players[0]
+
+
 def get_user(identity, mongo):
-    """ Returns if a user exists and creates one if if they dont
+    """ Returns if a user exists and creates one if they dont
 
     Parameters:
         identity: facebook id (string)
@@ -27,14 +108,15 @@ def get_user(identity, mongo):
     if user is None:
         created = True
         # get the player's id
-        url = "https://graph.facebook.com/v2.6/{}?fields=first_name,last_name&access_token={}".format(identity, PAGE_ACCESS_TOKEN)
+        url = "https://graph.facebook.com/v2.6/{}?fields=first_name,last_name&access_token={}".format(
+            identity, PAGE_ACCESS_TOKEN)
         r = requests.get(url)
         log("Facebook profile")
         if (r.status_code) != 200:
             raise FacebookException("Facebook services not available")
         log(r.json())
         d = r.json()
-        name = d['first_name'] +" " + d['last_name']
+        name = d['first_name'] + " " + d['last_name']
         # now we know who this person is
         mongo.db.users.insert({"fid": identity,
                                "state": PID,
@@ -143,7 +225,7 @@ def update_player(user, player):
     teams = r.json()
     for team in teams:
         if (team['captain'] != None and
-            team['captain']['player_id'] == user['pid']):
+                team['captain']['player_id'] == user['pid']):
             captain = team["team_id"]
     user['captain'] = captain
     return user
@@ -223,12 +305,12 @@ def get_games(user):
     if (r.status_code == 401):
         raise NotCaptainException("Says you are not a captain, check admin")
     elif (r.status_code != 200):
-            d = loads(r.text)
-            if d['status_code'] == 401 or d['status_code'] == 404:
-                m = "Says you are not a captain, check admin"
-                raise NotCaptainException(m)
-            else:
-                raise PlatformException(PLATFORMMESSAGE)
+        d = loads(r.text)
+        if d['status_code'] == 401 or d['status_code'] == 404:
+            m = "Says you are not a captain, check admin"
+            raise NotCaptainException(m)
+        else:
+            raise PlatformException(PLATFORMMESSAGE)
     games = r.json()
     return games
 
@@ -375,6 +457,7 @@ def game_summary(user):
 
 
 class TestFunctions(unittest.TestCase):
+
     def setUp(self):
         self.user = {"fid": 1,
                      "state": PID,
@@ -491,6 +574,7 @@ class TestRequests(unittest.TestCase):
     # these test rely on a external platform
     # i just set up these tests if the data changes then they will break
     # need a guy (Dallas Fraser) and a girl (Dream Girl) on the team.id = 1
+
     def setUp(self):
         self.user = {"fid": 1,
                      "state": PID,
@@ -689,6 +773,7 @@ class TestRequests(unittest.TestCase):
 
 
 class TestUpcomingGames(unittest.TestCase):
+
     def setUp(self):
         self.game_id = None
         # add a random games
@@ -749,6 +834,7 @@ class TestUpcomingGames(unittest.TestCase):
 class TestSubmitScore(unittest.TestCase):
     # this test is a pain in the ass
     # after teardown hopefully has no errors
+
     def setUp(self):
         # score  =  hr so no bats are unassigned
         self.user = {'pid': 2,
