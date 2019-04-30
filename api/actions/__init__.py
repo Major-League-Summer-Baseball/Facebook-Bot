@@ -35,7 +35,7 @@ class Action():
                                 self.messenger,
                                 self.message).process()
         action = user['action']
-        if action == IdentifyUser.ACTION_IDENTIFIER:
+        if action["id"] == IdentifyUser.ACTION_IDENTIFIER:
             return IdentifyUser(self.database,
                                 self.messenger,
                                 self.message).process()
