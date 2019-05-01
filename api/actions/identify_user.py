@@ -25,34 +25,24 @@ class IdentifyUser(Action):
 
     def process(self):
         """Process the facebook id"""
-        facebook_id = self.message.get_sender_id()
-        user = self.database.get_user(facebook_id)
-        if user is None:
-            LOGGER.debug(
-                "Trying to identify facebook id {}".format(facebook_id))
-            url = (FACEBOOK_URL +
-                   "{}?fields=first_name,last_name&access_token={}".format(
-                       facebook_id, PAGE_ACCESS_TOKEN))
-            request_response = requests.get(url)
-            if request_response.status_code != 200:
-                LOGGER.critical("Facebook services not available")
-                LOGGER.critical(str(request_response.json()))
-                raise FacebookException("Facebook services not available")
-            data = request_response.json()
-
-            # now we know the person's facebook name
-            name = data['first_name'] + " " + data['last_name']
-            user = self.database.create_user(facebook_id, name)
-            user["action"] = {"id": IdentifyUser.ACTION_IDENTIFIER}
-            self.database.save_user(user)
-        elif (user["action"]["state"] == IdentifyUser.IMPOSTER_STATE or
-              user["action"]["state"] == IdentifyUser.LOCKED_OUT_STATE):
+        messenger_id = self.message.get_sender_id()
+        player = self.database.get_player(messenger_id)
+        if player is None:
+            messenger_user = self.messenger.lookup_user_id(messenger_id)
+            # TODO use the information from messenger to try and figure
+            # who the player is
+            player = self.database.create_user(messenger_id,
+                                               messenger_user.get_name())
+            player["action"] = {"id": IdentifyUser.ACTION_IDENTIFIER}
+            self.database.save_user(player)
+        elif (player["action"]["state"] == IdentifyUser.IMPOSTER_STATE or
+              player["action"]["state"] == IdentifyUser.LOCKED_OUT_STATE):
             # can ignore for now
             return
         # check if can find the user based upon their name
-        player = self.database.lookup_player(name)
+        player = self.database.lookup_player(messenger_user.get_name())
         if player is None:
-            self.check_email(user)
+            self.check_email(player)
 
     def check_email(self, user):
         tokens = self.message.split(" ")
