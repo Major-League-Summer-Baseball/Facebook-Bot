@@ -14,12 +14,19 @@ class NotCaptainException(Exception):
 class BatterException(Exception):
     pass
 
+
+class SubscriptionException(Exception):
+    pass
+
 PLATFORMMESSAGE = "Platform not available - try again later"
+
+
 class PlatformException(Exception):
     pass
 
 
 class MultiplePlayersException(Exception):
+
     def __init__(self, message, players):
         super().__init__(message)
         self.players = players
