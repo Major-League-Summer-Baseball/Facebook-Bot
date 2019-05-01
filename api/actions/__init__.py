@@ -17,9 +17,10 @@ class Action():
     This is the entry point into any action
     """
 
-    def __init__(self, database, messenger, message):
+    def __init__(self, database, platform, messenger, message):
         """Constructor"""
         self.database = database
+        self.platform = platform
         self.message = message
         self.messenger = messenger
 
@@ -28,14 +29,17 @@ class Action():
         user = self.database.get_user(self.message.get_sender_id())
         if user is None:
             return IdentifyUser(self.database,
+                                self.platform,
                                 self.messenger,
                                 self.message).process()
         if 'action' not in user.keys():
             return IdentifyUser(self.database,
+                                self.platform,
                                 self.messenger,
                                 self.message).process()
         action = user['action']
         if action["id"] == IdentifyUser.ACTION_IDENTIFIER:
             return IdentifyUser(self.database,
+                                self.platform,
                                 self.messenger,
                                 self.message).process()
