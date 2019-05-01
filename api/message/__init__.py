@@ -8,44 +8,47 @@
 '''
 
 
-class Event():
+class FormattedData():
+    """Formatted data"""
 
-    def __init__(self, event):
+    def __init__(self, data):
         """Constructor"""
-        self._event = event
+        self._data = data
+
+    def format(self):
+        """Returns a formatted string of the data"""
+        raise NotImplementedError("Need to implement the format of data")
+
+
+class Event(FormattedData):
+    """Event data"""
 
     def format(self):
         """Returns a formatted string of the event"""
-        return "{} - {}".format(self._event['event'].replace("_", " "),
-                                self._event['date'])
+        return "{} - {}".format(self._data['event'].replace("_", " "),
+                                self._data['date'])
 
 
-class Game():
-
-    def __init__(self, game):
-        """Constructor"""
-        self._game = game
+class Game(FormattedData):
+    """Game data"""
 
     def format(self):
         """Returns a formatted string representation of the game"""
-        return "{}: {} vs {} @ {} on {}".format(self._game['date'],
-                                                self._game['home_team'],
-                                                self._game['away_team'],
-                                                self._game['time'],
-                                                self._game['field'])
+        return "{}: {} vs {} @ {} on {}".format(self._data['date'],
+                                                self._data['home_team'],
+                                                self._data['away_team'],
+                                                self._data['time'],
+                                                self._data['field'])
 
 
-class LeagueLeader():
-
-    def __init__(self, leader):
-        """Constructor"""
-        self._leader = leader
+class LeagueLeader(FormattedData):
+    """League leader data"""
 
     def format(self):
         """Returns a formatted string representation of the league leader"""
-        return "{} ({}): {:d}".format(self._leader['name'],
-                                      self._leader['team'],
-                                      self._leader['hits'])
+        return "{} ({}): {:d}".format(self._data['name'],
+                                      self._data['team'],
+                                      self._data['hits'])
 
 
 class Option():
