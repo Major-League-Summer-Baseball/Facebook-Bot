@@ -1,4 +1,4 @@
-Flask==0.10.1
-Flask_PyMongo==0.4.1
-requests==2.9.1
-gunicorn==19.5.0
+Flask>=1.0.1
+Flask_PyMongo>=2.3.0
+requests==2.21.0
+gunicorn==19.9.0
