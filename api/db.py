@@ -18,34 +18,35 @@ class DatabaseService():
     def __init__(self, mongo):
         self.mongo = mongo
 
-    def get_user(self, facebook_id):
+    def get_player(self, facebook_id):
         """Returns the user object for the given facebook id"""
         return self.mongo.db.users.find_one({'facebook_id': facebook_id})
 
-    def create_user(self, facebook_id, name):
+    def create_player(self, facebook_id, name):
         """Creates a user for the given facebook id with the given name"""
         user = {"facebook_id": facebook_id, "facebook_name": name}
         self.mongo.db.users.insert(user)
         return user
 
-    def save_user(self, user):
+    def save_player(self, user):
         self.mongo.db.users.save(user)
 
-    def already_in_league(user, player, mongo):
+    def already_in_league(self, player):
         """Check if a player already in the league
 
         Parameters:
-            user: the user dictionary (dict)
-            player: the player object
-            mongo: the mongo db
+            player: the player object (MLSB Player)
         Returns
             taken: True if someone already taken that player, False otherwise
         """
         taken = True
-        user = mongo.db.users.find_one({'pid': player['player_id']})
+        user = self.mongo.db.users.find_one({'pid': player['player_id']})
         if user is None:
             taken = False
         return taken
+
+
+class PlatformService():
 
     def lookup_player(self, name):
         """Returns a lookup for the player in the league
