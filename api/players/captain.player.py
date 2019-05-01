@@ -21,7 +21,7 @@ class Captain(Player):
         self.team_captain = dictionary["team_captain"]
 
     def to_dictionary(self):
-        """Returns the dictionarty representation of the player"""
+        """Returns the dictionary representation of the player"""
         base = super().to_dictionary(self)
         base["teamroster"] = self.teamroster
         base["team_captain"] = self.team_captain
