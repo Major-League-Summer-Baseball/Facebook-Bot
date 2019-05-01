@@ -4,8 +4,9 @@ from api.logging import LOGGER
 from api.message import Message
 from api.messenger import Messenger
 from api.errors import FacebookException
+from api.messenger.user import User
 from api.variables import NO_OPTIONS_AVAILABLE, SCROLL_FOR_MORE_OPTIONS,\
-    EVEN_MORE_OPTIONS
+    EVEN_MORE_OPTIONS, PAGE_ACCESS_TOKEN
 
 
 class FacebookPayload():
@@ -45,11 +46,47 @@ class FacebookPayload():
 
 class FacebookMessenger(Messenger):
     URL = "https://graph.facebook.com"
-    VERSION = "v2.6"
+    VERSION = "v3.3"
+    MALES = ["male", "m"]
+    FIELDS = "fields=first_name,last_name,gender,email"
 
     def __init__(self, token):
         self.token = token
         self.headers = {"Content-Type": "application/json"}
+
+    def lookup_user_id(self, user_id):
+        """Looks up some information from facebook about the given user
+        Parameters:
+            user_id: the id of the user
+        Returns:
+            user: the user (User)
+        """
+        LOGGER.debug(
+            "Trying to identify facebook id {}".format(user_id))
+        url = ("{}/{}/{}?{}&access_token={}".format(
+            FacebookMessenger.URL,
+            FacebookMessenger.VERSION,
+            FacebookMessenger.FIELDS,
+            user_id,
+            PAGE_ACCESS_TOKEN))
+        request_response = requests.get(url)
+        if request_response.status_code != 200:
+            LOGGER.critical("Facebook services not available")
+            LOGGER.critical(str(request_response.json()))
+            raise FacebookException("Facebook services not available")
+        data = request_response.json()
+        # now we know the person's facebook name
+        name = data['first_name'] + " " + data['last_name']
+        email = None
+        gender = None
+        if "email" in data.keys():
+            email = data["email"]
+        if "gender" in data.keys():
+            gender = ("m"
+                      if data["gender"].lower() in FacebookMessenger.MALES
+                      else "f")
+        user = User(name=name, email=email, gender=gender)
+        return user
 
     def send_message(self, message):
         """Sends the given message.
