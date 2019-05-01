@@ -33,3 +33,13 @@ class Messenger():
             message: the message parsed from the response (Message)
         """
         raise NotImplementedError("Messenger needs to implement parse message")
+
+    @abstractmethod
+    def lookup_user_id(self, user_id):
+        """Lookups the user information associated with the given id
+        Parameters:
+            user_id: the id of the user (dependent upon messenger)
+        Returns:
+            user: a user object return from the messenger (Object/Dictionary)
+        """
+        raise NotImplementedError("Messenger needs to imeplement user lookup")
