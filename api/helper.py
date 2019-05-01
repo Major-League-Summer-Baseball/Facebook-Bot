@@ -1,11 +1,20 @@
 '''
-Created on May 3, 2017
-
-@author: Dallas
+@author: Dallas Fraser
+@author: 2019-04-29
+@organization: MLSB
+@project: Facebook Bot
+@summary: Holds basic function that are helpful across packages
 '''
-import unittest
 import sys
 from json import loads as loader
+
+
+def difference_in_minutes_between_dates(d1, d2):
+    """Returns the absolute difference between the two datetime objects"""
+    if d1 is None or d2 is None:
+        # none is treated like infinity
+        return sys.maxsize
+    return abs((d1 - d2).total_seconds() / 60.0)
 
 
 def parse_number(text):
@@ -44,20 +53,3 @@ def log(message):
     except Exception as e:
         print(str(e))
         pass
-
-
-class Test(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    def testName(self):
-        pass
-
-
-if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
