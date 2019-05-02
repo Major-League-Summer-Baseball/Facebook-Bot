@@ -32,13 +32,13 @@ class Subscription():
 
     def __init__(self, dictionary=None):
         """Constructor"""
+        # default to reminding before
+        self.time = None
+        self.subscribed = True
+        self.relative_time = RelativeTimeEnum.MORNING
         if dictionary is not None:
+            # if given a dictionary loads what values are in the dictionary
             self.from_dictionary(dictionary)
-        else:
-            # default to reminding before
-            self.time = None
-            self.subscribed = True
-            self.relative_time = RelativeTimeEnum.MORNING
 
     def from_dictionary(self, dictionary):
         """Sets the properties from a given dictionary"""
@@ -154,7 +154,10 @@ class Subscriptions():
 
     def __init__(self, dictionary=None):
         """Constructor"""
+        self.league = True
+        self.team_lookup = {}
         if dictionary is not None:
+            # if given a dictionary loads what values are in the dictionary
             self.from_dictionary(dictionary)
 
     def from_dictionary(self, dictionary):
@@ -164,13 +167,17 @@ class Subscriptions():
             if "league" in key.lower():
                 self.league = value in TRUTHINESS
             else:
+                if isinstance(value, Subscription):
+                    value = value.to_dictionary()
                 self.team_lookup[key] = Subscription(dictionary=value)
 
-    def to_dictionary(self, dictionary):
+    def to_dictionary(self):
         """Returns the dictionary representation of the subscription"""
         result = {"league": self.league}
-        for team_id, subscribed in dictionary.items():
+        for team_id, subscribed in self.team_lookup.items():
+
             result[str(team_id)] = subscribed.to_dictionary()
+        return result
 
     def is_subscribed_to_league(self):
         """Returns whether subscribed to the league"""
