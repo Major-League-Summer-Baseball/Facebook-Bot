@@ -24,8 +24,16 @@ class Action():
         self.message = message
         self.messenger = messenger
 
-    def process(self):
-        """Processes the given Facebook Id"""
+    def process(self, action_map):
+        """Processes the given message
+        Parameters:
+            action_map: a map for the given aciton id to their actions classes
+        Returns:
+            the result of the action that is processed
+        Raises:
+            ActionException: if does not recognize what action to take
+        """
+        # if a not recognized user then need to identify them
         user = self.database.get_user(self.message.get_sender_id())
         if user is None:
             return IdentifyUser(self.database,
@@ -38,8 +46,10 @@ class Action():
                                 self.messenger,
                                 self.message).process()
         action = user['action']
-        if action["id"] == IdentifyUser.ACTION_IDENTIFIER:
-            return IdentifyUser(self.database,
-                                self.platform,
-                                self.messenger,
-                                self.message).process()
+        for action_key, action in action_map.items():
+            if action["id"] == action_key:
+                return action(self.database,
+                              self.platform,
+                              self.messenger,
+                              self.message).process()
+        raise
