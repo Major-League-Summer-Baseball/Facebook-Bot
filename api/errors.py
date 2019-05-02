@@ -1,3 +1,14 @@
+'''
+@author: Dallas Fraser
+@author: 2019-04-29
+@organization: MLSB
+@project: Facebook Bot
+@summary: Holds a list of errors that could occur
+'''
+
+
+PLATFORMMESSAGE = "Platform not available - try again later"
+
 
 class FacebookException(Exception):
     pass
@@ -18,14 +29,16 @@ class BatterException(Exception):
 class SubscriptionException(Exception):
     pass
 
-PLATFORMMESSAGE = "Platform not available - try again later"
-
 
 class PlatformException(Exception):
     pass
 
 
 class OptionException(Exception):
+    pass
+
+
+class ActionException(Exception):
     pass
 
 
