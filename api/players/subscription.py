@@ -164,13 +164,13 @@ class Subscriptions():
             if "league" in key.lower():
                 self.league = value in TRUTHINESS
             else:
-                self.team_lookup[key] = value in TRUTHINESS
+                self.team_lookup[key] = Subscription(dictionary=value)
 
     def to_dictionary(self, dictionary):
         """Returns the dictionary representation of the subscription"""
         result = {"league": self.league}
         for team_id, subscribed in dictionary.items():
-            result[str(team_id)] = subscribed
+            result[str(team_id)] = subscribed.to_dictionary()
 
     def is_subscribed_to_league(self):
         """Returns whether subscribed to the league"""
