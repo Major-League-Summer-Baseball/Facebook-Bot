@@ -15,6 +15,7 @@ import datetime
 class TestSubscription(unittest.TestCase):
 
     def testEmptyConstructor(self):
+        """Test the default subscription"""
         subscription = Subscription()
         self.assertTrue(subscription.is_subscribed())
         dictionary = subscription.to_dictionary()
@@ -23,6 +24,7 @@ class TestSubscription(unittest.TestCase):
                          RelativeTimeEnum.MORNING)
 
     def testToConversion(self):
+        """Test that able to create object from dictionary and back"""
         given_time = "8:00"
         relative = RelativeTimeEnum.MORNING
         dictionary_constructor = {Subscription.SUBCRIBED_KEY: False,
@@ -38,6 +40,7 @@ class TestSubscription(unittest.TestCase):
                          "0" + given_time)
 
     def testShouldSendReminderTime(self):
+        """Test send reminder when the time is set"""
         current = datetime.datetime.now()
         yesterday = current - datetime.timedelta(days=1)
         tomorrow = current + datetime.timedelta(days=1)
@@ -57,6 +60,7 @@ class TestSubscription(unittest.TestCase):
         self.assertTrue(value)
 
     def testShouldSendReminderRelativeTimeMorning(self):
+        """Test send reminder when the relative time is morning"""
         current = datetime.datetime.now()
         yesterday = current - datetime.timedelta(days=1)
         tomorrow = current + datetime.timedelta(days=1)
@@ -76,6 +80,7 @@ class TestSubscription(unittest.TestCase):
         self.assertTrue(value)
 
     def testShouldSendReminderRelativeTimeHourBefore(self):
+        """Test send reminder when the relative time is hour before game"""
         current = datetime.datetime.now()
         yesterday = current - datetime.timedelta(days=1)
         tomorrow = current + datetime.timedelta(days=1)
@@ -94,6 +99,7 @@ class TestSubscription(unittest.TestCase):
         self.assertTrue(value)
 
     def testShouldSendReminderRelativeTimeNightBefore(self):
+        """Test send reminder when the relative time is night before game"""
         current = datetime.datetime.now()
         yesterday = current - datetime.timedelta(days=1)
         tomorrow = current + datetime.timedelta(days=1)
@@ -113,6 +119,7 @@ class TestSubscription(unittest.TestCase):
         self.assertTrue(value)
 
     def testSetRelativeTime(self):
+        """Test the setter of relative time takes only a relative time"""
         subscription = Subscription()
         try:
             subscription.set_relative_time("")
@@ -122,6 +129,7 @@ class TestSubscription(unittest.TestCase):
         subscription.set_relative_time(RelativeTimeEnum.MORNING)
 
     def testSetTime(self):
+        """Test the setter of time takes only datetime or time"""
         subscription = Subscription()
         try:
             subscription.set_time("")
@@ -133,7 +141,58 @@ class TestSubscription(unittest.TestCase):
 
 
 class TestSubscriptions(unittest.TestCase):
-    pass
+
+    def testEmptyConstructor(self):
+        """Test the default Subscriptions"""
+        subscriptions = Subscriptions()
+        self.assertTrue(subscriptions.is_subscribed_to_league())
+        self.assertFalse(subscriptions.is_subscribed_to_team(-1))
+
+    def testConversion(self):
+        """Test able to construct from dictionary and export"""
+        dictionary = {"league": False, "1": Subscription().to_dictionary()}
+        subscriptions = Subscriptions(dictionary=dictionary)
+        self.assertFalse(subscriptions.is_subscribed_to_league())
+        self.assertTrue(subscriptions.is_subscribed_to_team(1))
+        subscriptions = Subscriptions(dictionary=subscriptions.to_dictionary())
+        self.assertFalse(subscriptions.is_subscribed_to_league())
+        self.assertTrue(subscriptions.is_subscribed_to_team(1))
+
+    def testConversionUsingObject(self):
+        """Test able conversion where subscription is object not dict"""
+        dictionary = {"league": False, "1": Subscription()}
+        subscriptions = Subscriptions(dictionary=dictionary)
+        self.assertFalse(subscriptions.is_subscribed_to_league())
+        self.assertTrue(subscriptions.is_subscribed_to_team(1))
+        subscriptions = Subscriptions(dictionary=subscriptions.to_dictionary())
+        self.assertFalse(subscriptions.is_subscribed_to_league())
+        self.assertTrue(subscriptions.is_subscribed_to_team(1))
+
+    def testSubscribeToTeam(self):
+        """Test able to subscribe to team"""
+        subscriptions = Subscriptions()
+        subscriptions.subscribe_to_team(1)
+        self.assertTrue(subscriptions.is_subscribed_to_team(1))
+        self.assertTrue(subscriptions.is_subscribed_to_team("1"))
+
+        # string or number should work
+        subscriptions.subscribe_to_team("2")
+        self.assertTrue(subscriptions.is_subscribed_to_team(2))
+        self.assertTrue(subscriptions.is_subscribed_to_team("2"))
+
+    def testUnsubscribeToTeam(self):
+        """Test able to unsubscribe to team"""
+        subscribed_teams = {"1": Subscription().to_dictionary(),
+                            "2": Subscription().to_dictionary()}
+        subscriptions = Subscriptions(dictionary=subscribed_teams)
+        subscriptions.unsubscribe_to_team(1)
+        self.assertFalse(subscriptions.is_subscribed_to_team(1))
+        self.assertFalse(subscriptions.is_subscribed_to_team("1"))
+
+        # string or number should work
+        subscriptions.unsubscribe_to_team("2")
+        self.assertFalse(subscriptions.is_subscribed_to_team(2))
+        self.assertFalse(subscriptions.is_subscribed_to_team("2"))
 
 
 if __name__ == "__main__":
