@@ -25,6 +25,10 @@ class PlatformException(Exception):
     pass
 
 
+class OptionException(Exception):
+    pass
+
+
 class MultiplePlayersException(Exception):
 
     def __init__(self, message, players):
