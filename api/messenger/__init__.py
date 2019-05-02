@@ -16,7 +16,6 @@ class Messenger():
     def __init__(self):
         pass
 
-    @abstractmethod
     def send_message(self, message):
         """Sends the given message.
         Parameters:
@@ -24,7 +23,6 @@ class Messenger():
         """
         raise NotImplementedError("Messenger needs to implement send message")
 
-    @abstractmethod
     def parse_response(self, response):
         """Parses the message from the response given by the messenger.
         Parameters:
@@ -34,7 +32,6 @@ class Messenger():
         """
         raise NotImplementedError("Messenger needs to implement parse message")
 
-    @abstractmethod
     def lookup_user_id(self, user_id):
         """Lookups the user information associated with the given id
         Parameters:
