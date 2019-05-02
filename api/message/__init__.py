@@ -6,6 +6,7 @@
 @summary: Holds information and the message received by some sender
     Additionally holds some objects that are formatted upon sending a message
 '''
+from api.errors import OptionException
 
 
 class FormattedData():
@@ -18,6 +19,9 @@ class FormattedData():
     def format(self):
         """Returns a formatted string of the data"""
         raise NotImplementedError("Need to implement the format of data")
+
+    def __str__(self):
+        return str(self._data)
 
 
 class Event(FormattedData):
@@ -61,7 +65,10 @@ class Option():
     def __init__(self, title, data):
         """Constructor"""
         self._title = title
-        self._data = data
+        if isinstance(data, FormattedData):
+            self._data = data
+        else:
+            raise OptionException("Given non-formatted data")
 
     def get_data(self):
         """Returns a data object that has a format method"""
