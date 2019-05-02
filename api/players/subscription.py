@@ -6,8 +6,8 @@
 @summary: The subscriptions of the player
 '''
 from enum import Enum
-from api.logger import LOGGER
-from api.errors import SubscriptionError
+from api.logging import LOGGER
+from api.errors import SubscriptionException
 from api.variables import SUBSCRIPTION_TIME_RANGE
 from api.helper import difference_in_minutes_between_dates
 import datetime
@@ -63,7 +63,7 @@ class Subscription():
         """Returns a dictionary representation of the object"""
         result = {Subscription.SUBCRIBED_KEY: self.subscribed}
         if self.time is not None:
-            result[Subscription.TIME_KEY] = self.time
+            result[Subscription.TIME_KEY] = self.time.strftime("%H:%M")
         if self.relative_time is not None:
             result[Subscription.RELATIVE_TIME_KEY] = self.relative_time
         return result
@@ -80,31 +80,38 @@ class Subscription():
         """Deactivates the subscription"""
         self.subscribed = False
 
-    def should_send_reminder(self, gameDate):
+    def should_send_reminder(self,
+                             gameDate, comparison=datetime.datetime.now()):
         """Returns whether the subscription calls for a game reminder
         Parameters:
             gameDate: the date of the game to give the reminder about
+            comparison: an optional parameter if do not want to compare
+            to right now (mainly for testing)
         Returns:
             within: True if the given time is within the subscription range
         """
         time = None
         relative_time = None
-        right_now = datetime.datetime.now()
         if self.time is not None:
-            time = datetime.combine(gameDate.date(), self.time)
+            time = datetime.datetime.combine(gameDate.date(), self.time)
         if self.relative_time is not None:
             if self.relative_time is RelativeTimeEnum.MORNING:
-                relative_time = datetime.combine(gameDate.date(),
-                                                 datetime.time(8, 0))
+                relative_time = datetime.datetime.combine(gameDate.date(),
+                                                          datetime.time(8, 0))
             elif self.relative_time is RelativeTimeEnum.HOUR_BEFORE:
                 relative_time = gameDate - datetime.timedelta(hours=1)
             elif self.relative_time is RelativeTimeEnum.NIGHT_BEFORE:
-                relative_time = gameDate - datetime.timedelta(days=1)
+                day_before = (gameDate - datetime.timedelta(days=1))
+                relative_time = datetime.datetime.combine(day_before.date(),
+                                                          datetime.time(20, 0))
         # check if right now is in the subscription reminder time frame
         c1 = (difference_in_minutes_between_dates(
-            time, right_now) < SUBSCRIPTION_TIME_RANGE)
+            time, comparison) < SUBSCRIPTION_TIME_RANGE)
         c2 = (difference_in_minutes_between_dates(
-            relative_time, right_now) < SUBSCRIPTION_TIME_RANGE)
+            relative_time, comparison) < SUBSCRIPTION_TIME_RANGE)
+        LOGGER.debug("Subscription {} and {}".format(str(c1), str(c2)))
+        LOGGER.debug("relative time:{}, time: {}, comparison:{}".format(
+            relative_time, time, comparison))
         return c1 or c2
 
     def set_relative_time(self, relative_enum):
@@ -112,30 +119,31 @@ class Subscription():
         Parameters:
             relative_enum: the relative time to use (RelativeTimeEnum)
         Raises:
-            SubscriptionError if unrecognized relative time given
+             SubscriptionException if unrecognized relative time given
         """
         if (relative_enum is RelativeTimeEnum.MORNING or
                 relative_enum is RelativeTimeEnum.HOUR_BEFORE or
                 relative_enum is RelativeTimeEnum.NIGHT_BEFORE):
             self.relative_time = relative_enum
             return
-        error_message = "Unrecongized relative time: {}".format(relative_enum)
-        LOGGER.error(error_message)
-        raise SubscriptionError(error_message)
+        message = "Unrecongized relative time: {}".format(relative_enum)
+        LOGGER.error(message)
+        raise SubscriptionException(message)
 
     def set_time(self, time):
         """Sets the time of the subscription
         Parameters:
             time: the datetime time to use for the subscription (Time)
         Raises:
-            SubscriptionError if time is not of type datetime.Time
+             SubscriptionException if time is not of type datetime.Time
         """
-        if isinstance(time, datetime.time):
+        if (isinstance(time, datetime.time) or
+                isinstance(time, datetime.datetime)):
             self.time = time
             return
-        error_message = "Given time of the wrong type: {}".format(time)
-        LOGGER.error(error_message)
-        raise SubscriptionError(error_message)
+        message = "Given time of the wrong type: {}".format(time)
+        LOGGER.error(message)
+        raise SubscriptionException(message)
 
 
 class Subscriptions():
