@@ -5,7 +5,7 @@
 @project: Facebook Bot
 @summary: The basic player
 '''
-from api.players.subscription import Subscription
+from api.players.subscription import Subscriptions
 
 
 class Player():
@@ -19,13 +19,13 @@ class Player():
         """Sets the player attributes from the given dictionary"""
         self.player = dictionary["player"]
         self.teams = dictionary["teams"]
-        self.subscription = Subscription(dictionary['subscription'])
+        self.subscriptions = Subscriptions(dictionary['subscription'])
 
     def to_dictionary(self):
         """Returns the dictionarty representation of the player"""
         return {"player": self.player,
                 "teams": self.teams,
-                "subscription": self.subscription.to_dictionary()}
+                "subscriptions": self.subscriptions.to_dictionary()}
 
     def is_captain(self):
         """Returns whether the given player is a captain"""
@@ -38,7 +38,3 @@ class Player():
     def get_subscription(self):
         """Returns the what the player is subscribed to"""
         return self.subscription
-
-    def set_subscription(self, subscription):
-        """Setter for the subscription"""
-        self.subscription = subscription
