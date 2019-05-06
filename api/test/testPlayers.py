@@ -5,27 +5,84 @@
 @project: Facebook Bot
 @summary: Test captain player
 '''
-from api.players.subscription import Subscription, Subscriptions,\
-    RelativeTimeEnum
-from api.players.captain import Captain
+from api.players.subscription import Subscriptions
 from api.players.player import Player
-from api.players.convenor import Convenor
+from api.actions import ActionState
+from api.variables import IDENTIFY_KEY
 import unittest
-import datetime
 
 
 class TestPlayer(unittest.TestCase):
 
-    def testConversion(self):
-        pass
+    def testEmptyConstructor(self):
+        """Test the empty constructor"""
+        player = Player()
+        self.assertFalse(player.is_convenor())
+        self.assertFalse(player.is_captain(1))
 
+        # test able to produce dictionary
+        player.to_dictionary()
 
-class TestCaptain(unittest.TestCase):
-    pass
-
-
-class TestConvenor(unittest.TestCase):
-    pass
+    def testConverion(self):
+        """Test able to convert a player"""
+        # the test player and its date
+        test_name = "test name"
+        test_id = "test id"
+        test_player_info = {}
+        test_teams = [1]
+        test_captain = [1]
+        test_subscription = Subscriptions()
+        test_subscription.subscribe_to_team(1)
+        test_action_state = ActionState(key=IDENTIFY_KEY)
+        test = {"messenger_name": test_name,
+                "messenger_id": test_id,
+                "player_info": test_player_info,
+                "teams": test_teams,
+                "captain": test_captain,
+                "subscriptions": test_subscription,
+                "action_state": test_action_state
+                }
+        # create the player from a dictionary
+        player = Player(dictionary=test)
+        player_dict = player.to_dictionary()
+        self.assertEqual(test["messenger_name"],
+                         player_dict["messenger_name"])
+        self.assertEqual(test["messenger_id"],
+                         player_dict["messenger_id"])
+        self.assertEqual(test["teams"],
+                         player_dict["teams"])
+        self.assertEqual(test["player_info"],
+                         player_dict["player_info"])
+        self.assertEqual(test["teams"],
+                         player_dict["teams"])
+        self.assertEqual(test["captain"],
+                         player_dict["captain"])
+        print(test["subscriptions"].is_subscribed_to_team(1))
+        print(player_dict)
+        self.assertTrue(player_dict["subscriptions"]["league"])
+        self.assertEqual(test["action_state"].to_dictionary({}),
+                         player_dict["action_state"])
+        # make sure to dictionary does not overwrite values
+        player.to_dictionary({})
+        player_dict = player.to_dictionary()
+        self.assertEqual(test["messenger_name"],
+                         player_dict["messenger_name"])
+        self.assertEqual(test["messenger_id"],
+                         player_dict["messenger_id"])
+        self.assertEqual(test["teams"],
+                         player_dict["teams"])
+        self.assertEqual(test["player_info"],
+                         player_dict["player_info"])
+        self.assertEqual(test["teams"],
+                         player_dict["teams"])
+        self.assertEqual(test["captain"],
+                         player_dict["captain"])
+        self.assertEqual(test["subscriptions"].is_subscribed_to_team(1),
+                         player_dict["subscriptions"].is_subscribed_to_team(1))
+        self.assertEqual(test["subscriptions"].is_subscribed_to_team(2),
+                         player_dict["subscriptions"].is_subscribed_to_team(2))
+        self.assertEqual(test["action_state"].to_dictionary(),
+                         player_dict["action_state"].to_dictionary())
 
 
 if __name__ == "__main__":
