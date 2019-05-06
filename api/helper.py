@@ -9,6 +9,20 @@ import sys
 from json import loads as loader
 
 
+def parse_out_email(message_string):
+    """Returns an email that is contained in the message
+    Parameters:
+        message_string: the message that may/may not contain email
+    Returns:
+        the email or None if one is not found
+    """
+    tokens = message_string.split(" ")
+    for token in tokens:
+        if "@" in token and token != "@":
+            return token
+    return None
+
+
 def difference_in_minutes_between_dates(d1, d2):
     """Returns the absolute difference between the two datetime objects"""
     if d1 is None or d2 is None:
