@@ -9,12 +9,33 @@
     E.g. Submit a score, Subscribe to a team
     All actions should keep track of their own state
 '''
-from api.actions.identify_user import IdentifyUser
+from api.errors import ActionException
 
 
-class Action():
+class ActionState():
+    """Holds the state of the action"""
+
+    def __init__(self, key=None, dictionary=None):
+        # id needs to be set by a parameter or in the dictionary
+        self.key = key
+        if dictionary is not None:
+            self.from_dictionary(dictionary)
+        if self.key is None:
+            raise ActionException("Action id not set")
+
+    def from_dictionary(self, dictionary):
+        """Loads action state from a dictionary"""
+        self.key = (self.key if dictionary.get("id", None) is None
+                    else dictionary.get("id"))
+
+    def to_dictionary(self):
+        """Return a dictionary representation of the action state"""
+        return {"id": self.key}
+
+
+class ActionInterface():
     """
-    This is the entry point into any action
+    The action interface
     """
 
     def __init__(self, database, platform, messenger, message):
@@ -25,31 +46,8 @@ class Action():
         self.messenger = messenger
 
     def process(self, action_map):
-        """Processes the given message
+        """Process the action
         Parameters:
-            action_map: a map for the given aciton id to their actions classes
-        Returns:
-            the result of the action that is processed
-        Raises:
-            ActionException: if does not recognize what action to take
+            action_map: maps action ids to their classes
         """
-        # if a not recognized user then need to identify them
-        user = self.database.get_user(self.message.get_sender_id())
-        if user is None:
-            return IdentifyUser(self.database,
-                                self.platform,
-                                self.messenger,
-                                self.message).process()
-        if 'action' not in user.keys():
-            return IdentifyUser(self.database,
-                                self.platform,
-                                self.messenger,
-                                self.message).process()
-        action = user['action']
-        for action_key, action in action_map.items():
-            if action["id"] == action_key:
-                return action(self.database,
-                              self.platform,
-                              self.messenger,
-                              self.message).process()
-        raise
+        raise NotImplementedError("Action needs to implement process method")
