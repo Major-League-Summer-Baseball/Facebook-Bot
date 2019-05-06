@@ -3,85 +3,123 @@
 @author: 2019-08-27
 @organization: MLSB
 @project: Facebook Bot
-@summary: Action to determine the facebook user to someone in the legaue
+@summary: Action to determine the to identify user to someone in the legaue
 '''
-from api.actions import Action
+from api.actions import ActionInterface
 from api.actions.welcome import WelcomeAction
-from api.variables import PAGE_ACCESS_TOKEN, ASK_EMAIL_COMMENT,\
-    EMAIL_NOT_FOUND, LOCKED_OUT_COMMENT
+from api.variables import ASK_EMAIL_COMMENT, EMAIL_NOT_FOUND,\
+    LOCKED_OUT_COMMENT
+from api.helper import parse_out_email
 from api.logging import LOGGER
 from api.message import Message
-from api.errors import FacebookException, IdentityException
-import requests
-FACEBOOK_URL = "https://graph.facebook.com/v2.6/"
+from api.errors import IdentityException
 
 
-class IdentifyUser(Action):
+class IdentifyUser(ActionInterface):
     ACTION_IDENTIFIER = "Looking up the user"
     EMAIL_STATE = "Asking for email"
     UNKNOWN_STATE = "Cannot find the user, user should consult convenors"
     IMPOSTER_STATE = "Trying to steal someone's else email"
     LOCKED_OUT_STATE = " Locked out for trying 3 different emails"
 
-    def process(self):
+    def process(self, action_map):
         """Process the facebook id"""
+        self.action_map = action_map
         messenger_id = self.message.get_sender_id()
         player = self.database.get_player(messenger_id)
         if player is None:
+            # first time we have ever received a response
             messenger_user = self.messenger.lookup_user_id(messenger_id)
-            # TODO use the information from messenger to try and figure
-            # who the player is
+            player_info = self.determine_player(messenger_user)
             player = self.database.create_user(messenger_id,
                                                messenger_user.get_name())
             player["action"] = {"id": IdentifyUser.ACTION_IDENTIFIER}
-            self.database.save_user(player)
-        elif (player["action"]["state"] == IdentifyUser.IMPOSTER_STATE or
-              player["action"]["state"] == IdentifyUser.LOCKED_OUT_STATE):
-            # can ignore for now
-            return
-        # check if can find the user based upon their name
-        player = self.database.lookup_player(messenger_user.get_name())
-        if player is None:
+            self.database.save_player(player)
+
+            # if we know the player info already then can just skip
+            # and welcome them to the league
+            if (player_info is not None and
+                    not self.database.already_in_league(player_info)):
+                return self.successful(player, player_info)
+
+            # otherwise got to figure them out by asking for their email
+            return self.check_email(player)
+        elif player["action"]["state"] == IdentifyUser.EMAIL_STATE:
+            # try figuring out who they are by their email
             self.check_email(player)
 
-    def check_email(self, user):
-        tokens = self.message.split(" ")
-        email = None
-        for token in tokens:
-            if "@" in token:
-                email = token
-                break
-        if email is None:
-            message = Message(user["facebook_id"], message=ASK_EMAIL_COMMENT)
+        # all other states we just ignore them
+
+    def determine_player(self, messenger_user):
+        try:
+            email = messenger_user.get_email()
+            if email is not None:
+                player = self.platform.lookup_player_email(email)
+            else:
+                player = self.platform.lookup_player(messenger_user.get_name())
+            return player
+        except IdentityException:
+            return None
+
+    def ask_email(self, player):
+        """Sends a message asking for the players email"""
+
+        # set the number of wrong guesses and increment it
+        if "wrongGuesses" not in player["action"].keys():
+            player["action"]["wrongGuesses"] = -1
+        player["action"]["wrongGuesses"] += 1
+
+        # if they have guessed wrong three times then lock them out
+        if player["action"]["wrongGuesses"] > 3:
+            player["action"]["state"] = IdentifyUser.LOCKED_OUT_STATE
+            message = Message(self.message.get_sender_id(),
+                              message=LOCKED_OUT_COMMENT)
             self.messenger.send_message(message)
-            user["action"]["wrongGuesses"] = 0
-            user["action"]["state"] = IdentifyUser.EMAIL_STATE
+
+        # otherwise just ask them again
+        else:
+            message = Message(self.message.get_sender_id(),
+                              message=ASK_EMAIL_COMMENT)
+            self.messenger.send_message(message)
+            player["action"]["state"] = IdentifyUser.EMAIL_STATE
+        self.database.save_player(player)
+
+    def check_email(self, player):
+        """Tries to lookup the player given they responded with their email"""
+        email = parse_out_email(self.message.get_message())
+        if email is None:
+            self.ask_email(player)
         else:
             try:
-                player = self.database.lookup_player_email(email.lower())
-                if self.database.already_in_league(player):
-                    user["action"]["state"] = IdentifyUser.IMPOSTER_STATE
-                else:
-                    user["player"] = player
-                    self.database.save_user(user)
-                    self.successful(user)
-            except IdentityException as e:
-                LOGGER.error(str(e))
-                LOGGER.error("Unable to find email: {}".format(email))
-                wrongGuesses = user["action"]["wrongGuesses"] + 1
-                user["action"]["wrongGuesses"] = wrongGuesses
-                if wrongGuesses < 3:
-                    message = Message(
-                        user["facebook_id"], message=EMAIL_NOT_FOUND)
-                    self.messenger.send_message(message)
-                else:
-                    user["action"]["state"] = IdentifyUser.LOCKED_OUT_STATE
-                    message = Message(
-                        user["facebook_id"], message=LOCKED_OUT_COMMENT)
-                    self.messenger.send_message(message)
-                self.database.save_user(user)
+                # lookup their player info and make sure they are not posing
+                # as someone else
+                player_info = self.database.lookup_player_email(email.lower())
+                if not self.database.already_in_league(player_info):
+                    return self.successful(player, player_info)
+                sender = self.message.get_sender_id()
+                message = "User posing as someone else: {}".format(sender)
+                LOGGER.warning(message)
+                player["action"]["state"] = IdentifyUser.IMPOSTER_STATE
+                self.database.save_player(player)
 
-    def successful(self, user):
+            except IdentityException as e:
+                LOGGER.debug("Unable to find email: {}".format(email))
+                message = Message(self.message.get_sender_id(),
+                                  message=EMAIL_NOT_FOUND)
+                self.messenger.send_message(message)
+
+                # ask again but eventually they will be locked out
+                self.ask_email(player)
+        return None
+
+    def successful(self, player, player_info):
         """Upon being successful update the user to the next action"""
-        user['action'] = {"id": WelcomeAction.ACTION_IDENTIFIER}
-        self.database.save_user(user)
+        LOGGER.info("Identified player: {}".format(player["player_name"]))
+        player["player"] = player_info
+        player["player_id"] = player_info["player_id"]
+        player['action'] = {"id": WelcomeAction.ACTION_IDENTIFIER}
+        self.database.save_player(player)
+        return WelcomeAction(self.database,
+                             self.platform,
+                             self.messenger,
+                             self.message).process()
