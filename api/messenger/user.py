@@ -8,22 +8,29 @@
 
 
 class User():
-    """Holds information about the user where info comes from messenger"""
+    """
+        Holds information about the user where info comes from the
+        messenger platform
+    """
 
-    def __init__(self, name=None, email=None, gender=None):
+    def __init__(self, sender_id, name=None, email=None, gender=None):
         """Constructor"""
-        self.name = name
-        self.email = email
-        self.gender = gender
+        self._name = name
+        self._email = email
+        self._gender = gender
+        self.sender_id = sender_id
+
+    def get_sender_id(self):
+        return self.sender_id
 
     def get_email(self):
         """Returns the email of the user"""
-        return self.email
+        return self._email
 
     def get_name(self):
         """Returns the name of the user"""
-        return self.name
+        return self._name
 
     def get_gender(self):
         """Returns the gender of the person"""
-        return self.gender
+        return self._gender

@@ -85,7 +85,7 @@ class FacebookMessenger(Messenger):
             gender = ("m"
                       if data["gender"].lower() in FacebookMessenger.MALES
                       else "f")
-        user = User(name=name, email=email, gender=gender)
+        user = User(user_id, name=name, email=email, gender=gender)
         return user
 
     def send_message(self, message):
