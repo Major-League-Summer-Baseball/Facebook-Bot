@@ -11,8 +11,11 @@ BASEURL = os.environ.get("PLATFORM",
                          "http://mlsb-dallas-branch.herokuapp.com/")
 ADMIN = os.environ.get("ADMIN", "mlsb-scores")
 PASSWORD = os.environ.get("PASSWORD", "fun")
-PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN",
-                                   "EAABrxzY0HL4BADKTzPtw3xmcgxDZBjrmYxQPcZAYhLpAgxJga2fMTiSDvffHY3WmoICxgCZA1VYKDjycOwkBmhlYoYZA720SqupxFYEDHZC5AzQztm1iAbGyFIzTYMzXZAq01I6jqHxLd1gIJbAEZAnDLcu5w2vtJh2USjBUXlzsiU7GlqSj9OW")
+PAGE_TOKEN_DEFAULT = ("EAABrxzY0HL4BADKTzPtw3xmcgxDZBjrmYxQPcZAYhLpAgxJga2fM" +
+                      "TiSDvffHY3WmoICxgCZA1VYKDjycOwkBmhlYoYZA720SqupxFYEDH" +
+                      "ZC5AzQztm1iAbGyFIzTYMzXZAq01I6jqHxLd1gIJbAEZAnDLcu5w2" +
+                      "vtJh2USjBUXlzsiU7GlqSj9OW")
+PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN", PAGE_TOKEN_DEFAULT)
 VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN", "908sdamnsclk2190KSDJI")
 
 HEADERS = {
@@ -75,9 +78,12 @@ BASE_HELP_OPTIONS = ["Upcoming games: Find out what games you have upcoming",
                      "Fun meter: how much fun has this summer been",
                      "Submit score: if you are captain submit a score"]
 HR_BAT_HELP_COMMENT = "Who hit a {}, \n if you dont see a player contact admin"
-SS_BAT_HELP_COMMENT = "Who hit a SS (only females), \n if you don't see a player contact admin"
+SS_BAT_HELP_COMMENT = ("Who hit a SS (only females), \n" +
+                       " if you don't see a player contact admin")
 HR_NUM_HELP_COMMENT = "Enter the number of homeruns they hit:"
-SS_NUM_HELP_COMMENT = "Enter the number of ss they hit: \n where a ss is a single that lands in the grass (females) \n no bounce in the infield"
+SS_NUM_HELP_COMMENT = ("Enter the number of ss they hit: \n" +
+                       "where a ss is a single that lands in the grass" +
+                       " (females) \n no bounce in the infield")
 INTROS = ["What do you want?",
           "Well, hello there",
           "DAM Daniel!!, how you doing?",
@@ -107,6 +113,11 @@ FUN_COMMENT = ["",
                "",
                "What fun",
                "Are we having too fun?"]
+
+# action keys
+WELCOME_KEY = "welcome"
+IDENTIFY_KEY = "identify user"
+HOME_KEY = "homescreen"
 
 # the various states of the bot
 # these are not displayed to the user
