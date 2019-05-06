@@ -9,7 +9,7 @@
 
 class Messenger():
     """
-    This is an abstract class that just used to specify the methods
+    This is an abstract class used to specify the methods
     that need to be implemented by the messenger
     """
 
