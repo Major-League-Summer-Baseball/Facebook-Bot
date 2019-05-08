@@ -14,8 +14,8 @@ class MockException(Exception):
     pass
 
 
-class MockMessenger():
-    """Mocks a messenger so one can view what was sent"""
+class MessengerStub():
+    """Stub a messenger so one can view what was sent"""
 
     def __init__(self, user=None):
         """Constructor"""
@@ -53,8 +53,8 @@ class MockMessenger():
         return self.user
 
 
-class MockPlatform():
-    """Mocks the platform calls"""
+class PlatformStub():
+    """Stub the platform calls"""
 
     def __init__(self, player=None):
         """Constructor"""
@@ -75,6 +75,56 @@ class MockPlatform():
         return self.player
 
 
-class MockDatabase():
-    def __init__():
-        pass
+class UserStub():
+    """Class that stubs the users in a db object on a mongo db"""
+    USER_ID_KEY = "messenger_id"
+
+    def __init__(self):
+        """Constructor"""
+        self.users = []
+
+    def find_one(self, search):
+        """Find a user that matches the given search criteria """
+        found = None
+        for user in self.users:
+            if self._match_criteria(user, search):
+                found = user
+                break
+        return found
+
+    def _match_criteria(self, user, criteria):
+        """Returns whether the user matches the search criteria"""
+        for key, value in criteria.items():
+            if key not in user.keys() or user[key] != value:
+                return False
+        return True
+
+    def insert_one(self, user):
+        """Inserts the given user into the users list"""
+        self.users.append(user)
+
+    def save(self, user):
+        """Saves the given user"""
+        pos = -1
+        for i, check in enumerate(self.users):
+            if check[UserStub.USER_ID_KEY] == user[UserStub.USER_ID_KEY]:
+                pos = i
+        if pos != -1:
+            self.users.pop(pos)
+            self.users.append(user)
+
+
+class DbStub():
+    """Class that stubs the db object on a mongo db"""
+
+    def __init__(self):
+        """Constructor"""
+        self.users = UserStub()
+
+
+class MongoStub():
+    """Class that stubs mongo for testing database interaction"""
+
+    def __init__(self):
+        """Constructor"""
+        self.db = DbStub()
