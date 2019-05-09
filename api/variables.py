@@ -57,6 +57,8 @@ GAME_SUBMITTED_COMMENT = "Game submitted"
 ASK_EMAIL_COMMENT = "What's your email associated with the league"
 EMAIL_NOT_FOUND = "The given email was not found, try another"
 LOCKED_OUT_COMMENT = "You have maxed out your tries, try contacting a convenor"
+IMPOSTER_COMMENT = ("Your player account is already used by another user,\n" +
+                    "contact convenors to resolve")
 
 # facebook specific responses
 NO_OPTIONS_AVAILABLE = "There are no options available"
