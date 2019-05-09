@@ -3,7 +3,7 @@
 @author: 2019-04-29
 @organization: MLSB
 @project: Facebook Bot
-@summary: Test captain player
+@summary: Test player class
 '''
 from api.players.subscription import Subscriptions
 from api.players.player import Player
@@ -42,6 +42,7 @@ class TestPlayer(unittest.TestCase):
                 "subscriptions": test_subscription,
                 "action_state": test_action_state
                 }
+
         # create the player from a dictionary
         player = Player(dictionary=test)
         player_dict = player.to_dictionary()
@@ -57,14 +58,15 @@ class TestPlayer(unittest.TestCase):
                          player_dict["teams"])
         self.assertEqual(test["captain"],
                          player_dict["captain"])
-        print(test["subscriptions"].is_subscribed_to_team(1))
-        print(player_dict)
-        self.assertTrue(player_dict["subscriptions"]["league"])
-        self.assertEqual(test["action_state"].to_dictionary({}),
+        self.assertEqual(test["subscriptions"].to_dictionary(),
+                         player_dict["subscriptions"])
+        self.assertEqual(test["action_state"].to_dictionary(),
                          player_dict["action_state"])
-        # make sure to dictionary does not overwrite values
-        player.to_dictionary({})
+
+        # make sure from_dictionary does not overwrite values
+        player.from_dictionary({})
         player_dict = player.to_dictionary()
+        print(player_dict)
         self.assertEqual(test["messenger_name"],
                          player_dict["messenger_name"])
         self.assertEqual(test["messenger_id"],
@@ -77,12 +79,10 @@ class TestPlayer(unittest.TestCase):
                          player_dict["teams"])
         self.assertEqual(test["captain"],
                          player_dict["captain"])
-        self.assertEqual(test["subscriptions"].is_subscribed_to_team(1),
-                         player_dict["subscriptions"].is_subscribed_to_team(1))
-        self.assertEqual(test["subscriptions"].is_subscribed_to_team(2),
-                         player_dict["subscriptions"].is_subscribed_to_team(2))
+        self.assertEqual(test["subscriptions"].to_dictionary(),
+                         player_dict["subscriptions"])
         self.assertEqual(test["action_state"].to_dictionary(),
-                         player_dict["action_state"].to_dictionary())
+                         player_dict["action_state"])
 
 
 if __name__ == "__main__":
