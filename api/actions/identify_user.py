@@ -5,10 +5,10 @@
 @project: Facebook Bot
 @summary: Action to determine the to identify user to someone in the legaue
 '''
-from api.actions import ActionInterface
+from api.actions import ActionInterface, ActionState
 from api.actions.welcome import WelcomeAction
 from api.variables import ASK_EMAIL_COMMENT, EMAIL_NOT_FOUND,\
-    LOCKED_OUT_COMMENT
+    LOCKED_OUT_COMMENT, IMPOSTER_COMMENT
 from api.helper import parse_out_email
 from api.logging import LOGGER
 from api.message import Message
@@ -31,9 +31,8 @@ class IdentifyUser(ActionInterface):
             # first time we have ever received a response
             messenger_user = self.messenger.lookup_user_id(messenger_id)
             player_info = self.determine_player(messenger_user)
-            player = self.database.create_user(messenger_id,
-                                               messenger_user.get_name())
-            player["action"] = {"id": IdentifyUser.ACTION_IDENTIFIER}
+            player = self.database.create_player(messenger_id,
+                                                 messenger_user.get_name())
             self.database.save_player(player)
 
             # if we know the player info already then can just skip
@@ -44,7 +43,7 @@ class IdentifyUser(ActionInterface):
 
             # otherwise got to figure them out by asking for their email
             return self.check_email(player)
-        elif player["action"]["state"] == IdentifyUser.EMAIL_STATE:
+        elif player.get_action_state().set_state(IdentifyUser.EMAIL_STATE):
             # try figuring out who they are by their email
             self.check_email(player)
 
@@ -65,13 +64,14 @@ class IdentifyUser(ActionInterface):
         """Sends a message asking for the players email"""
 
         # set the number of wrong guesses and increment it
-        if "wrongGuesses" not in player["action"].keys():
-            player["action"]["wrongGuesses"] = -1
-        player["action"]["wrongGuesses"] += 1
+        state_data = player.get_action_state().get_data()
+        if "wrongGuesses" not in state_data.keys():
+            state_data["wrongGuesses"] = -1
+        state_data["wrongGuesses"] += 1
 
         # if they have guessed wrong three times then lock them out
-        if player["action"]["wrongGuesses"] > 3:
-            player["action"]["state"] = IdentifyUser.LOCKED_OUT_STATE
+        if state_data["wrongGuesses"] > 3:
+            player.get_action_state().set_state(IdentifyUser.LOCKED_OUT_STATE)
             message = Message(self.message.get_sender_id(),
                               message=LOCKED_OUT_COMMENT)
             self.messenger.send_message(message)
@@ -81,7 +81,8 @@ class IdentifyUser(ActionInterface):
             message = Message(self.message.get_sender_id(),
                               message=ASK_EMAIL_COMMENT)
             self.messenger.send_message(message)
-            player["action"]["state"] = IdentifyUser.EMAIL_STATE
+            player.get_action_state().set_state(IdentifyUser.EMAIL_STATE)
+        player.get_action_state().set_data(state_data)
         self.database.save_player(player)
 
     def check_email(self, player):
@@ -99,8 +100,13 @@ class IdentifyUser(ActionInterface):
                 sender = self.message.get_sender_id()
                 message = "User posing as someone else: {}".format(sender)
                 LOGGER.warning(message)
-                player["action"]["state"] = IdentifyUser.IMPOSTER_STATE
+                state = IdentifyUser.IMPOSTER_STATE
+                player.get_action_state().set_state(state)
                 self.database.save_player(player)
+
+                # let the user know their player account already in use
+                self.message.send_message(Message(sender,
+                                                  message=IMPOSTER_COMMENT))
 
             except IdentityException as e:
                 LOGGER.debug("Unable to find email: {}".format(email))
@@ -115,9 +121,9 @@ class IdentifyUser(ActionInterface):
     def successful(self, player, player_info):
         """Upon being successful update the user to the next action"""
         LOGGER.info("Identified player: {}".format(player["player_name"]))
-        player["player"] = player_info
-        player["player_id"] = player_info["player_id"]
-        player['action'] = {"id": WelcomeAction.ACTION_IDENTIFIER}
+        next_action = ActionState(key=WelcomeAction.ACTION_IDENTIFIER)
+        player.set_action_state(next_action)
+        player.set_player_info(player_info)
         self.database.save_player(player)
         return WelcomeAction(self.database,
                              self.platform,
