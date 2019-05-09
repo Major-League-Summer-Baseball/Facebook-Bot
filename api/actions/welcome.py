@@ -1,7 +1,7 @@
-from api.actions import Action
+from api.actions import ActionInterface
 
 
-class WelcomeAction(Action):
+class WelcomeAction(ActionInterface):
     ACTION_IDENTIFIER = "Welcome screen"
 
     def process(self):
