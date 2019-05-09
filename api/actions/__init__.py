@@ -15,22 +15,57 @@ from api.errors import ActionException
 class ActionState():
     """Holds the state of the action"""
 
-    def __init__(self, key=None, dictionary=None):
-        # id needs to be set by a parameter or in the dictionary
-        self.key = key
+    def __init__(self, key=None, state=None, data={}, dictionary=None):
+        """Constructor
+        Parameters:
+            key: the key of the action (maps state to action class)
+            state: the state of the action
+            dictionary: the save dictionary of the action state
+        Notes:
+            key needs to be set as a parameter or in dictionary
+        """
+        self._key = key
+        self._state = state
+        self._data = {}
         if dictionary is not None:
             self.from_dictionary(dictionary)
-        if self.key is None:
+        if self._key is None:
             raise ActionException("Action id not set")
+
+    def get_data(self):
+        """Get the data dictionary of the action"""
+        return self._data
+
+    def set_data(self, data):
+        """Set the data dictionary of the action"""
+        self._data = data
+
+    def set_state(self, state):
+        """Setter for the state"""
+        self._state = state
+
+    def get_state(self):
+        """Getter for the state"""
+        return self._state
+
+    def get_id(self):
+        """Getter for the id of the action"""
+        return self._key
 
     def from_dictionary(self, dictionary):
         """Loads action state from a dictionary"""
-        self.key = (self.key if dictionary.get("id", None) is None
-                    else dictionary.get("id"))
+        self._key = (self._key if dictionary.get("id", None) is None
+                     else dictionary.get("id"))
+        self._data = (self._data if dictionary.get("data", None) is None
+                      else dictionary.get("data"))
+        self._state = (self._state if dictionary.get("state", None) is None
+                       else dictionary.get("state"))
 
     def to_dictionary(self):
         """Return a dictionary representation of the action state"""
-        return {"id": self.key}
+        return {"id": self._key,
+                "data": self._data,
+                "state": self._state}
 
 
 class ActionInterface():
