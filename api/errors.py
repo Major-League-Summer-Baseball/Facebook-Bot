@@ -10,6 +10,10 @@
 PLATFORMMESSAGE = "Platform not available - try again later"
 
 
+class DatabaseException(Exception):
+    pass
+
+
 class FacebookException(Exception):
     pass
 
