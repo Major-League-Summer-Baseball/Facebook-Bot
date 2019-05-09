@@ -3,14 +3,15 @@
 @author: 2019-04-29
 @organization: MLSB
 @project: Facebook Bot
-@summary: Mocks for various objects that are used for teting
+@summary: Test doubles for various objects that are used for testing
 '''
 from api.messenger.user import User
 from api.message import Message
 from api.errors import IdentityException
 
 
-class MockException(Exception):
+class TestDoubleException(Exception):
+    """Exceptions raised by on the test doubles"""
     pass
 
 
@@ -22,7 +23,7 @@ class MessengerStub():
         if user is None or isinstance(user, User):
             self.user = user
         else:
-            raise MockException("Illegal mock user")
+            raise TestDoubleException("Illegal mock user")
         self.message = None
 
     def send_message(self, message):
@@ -46,7 +47,7 @@ class MessengerStub():
         """Set the mock user to lookup"""
         if isinstance(user, User):
             self.user = user
-        raise MockException("Illegal mock user")
+        raise TestDoubleException("Illegal mock user")
 
     def lookup_user_id(self):
         """Return the mock user object"""
