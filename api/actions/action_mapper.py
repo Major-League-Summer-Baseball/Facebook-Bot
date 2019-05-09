@@ -14,23 +14,23 @@ class ActionMapper(ActionInterface):
     """The main point for actions"""
 
     def process(self, action_map):
-        # if a not recognized user then need to identify them
-        user = self.database.get_user(self.message.get_sender_id())
-        if user is None:
+        # if not a recognized user then need to identify them
+        player = self.database.get_player(self.message.get_sender_id())
+        if player is None:
             return IdentifyUser(self.database,
                                 self.platform,
                                 self.messenger,
                                 self.message).process()
-        if 'action' not in user.keys():
+        action = player.get_action_state()
+        if action is None:
             return IdentifyUser(self.database,
                                 self.platform,
                                 self.messenger,
                                 self.message).process()
-        action = user['action']
         for action_key, action in action_map.items():
-            if action["id"] == action_key:
+            if action.get_id() == action_key:
                 return action(self.database,
                               self.platform,
                               self.messenger,
                               self.message).process()
-        raise ActionException("Current action state")
+        raise ActionException("Unrecognized action state")
