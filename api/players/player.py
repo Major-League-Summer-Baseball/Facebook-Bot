@@ -11,6 +11,7 @@ from api.variables import IDENTIFY_KEY
 
 
 class Player():
+
     IDENTIFIER = "Player"
 
     def __init__(self, messenger_id=None, name=None, dictionary=None):
@@ -52,7 +53,7 @@ class Player():
                           if dictionary.get("convenor", None) is None
                           else dictionary.get("convenor"))
 
-        subscriptions = dictionary.get('subscription', None)
+        subscriptions = dictionary.get('subscriptions', None)
         if subscriptions is not None:
             if isinstance(subscriptions, Subscriptions):
                 value = subscriptions.to_dictionary()
@@ -64,25 +65,45 @@ class Player():
         if action_state is not None:
             if isinstance(action_state, ActionState):
                 value = action_state.to_dictionary()
-                print(value)
                 self._action_state = ActionState(None, dictionary=value)
             else:
                 self._action_state = ActionState(None, dictionary=action_state)
 
     def to_dictionary(self):
         """Returns the dictionary representation of the player"""
+        player_id = None
+        if (self._player_info is not None and
+                "player_id" in self._player_info.keys()):
+            player_id = self._player_info["player_id"]
         return {
             "messenger_name": self._messenger_name,
             "messenger_id": self._messenger_id,
             "player_info": self._player_info,
+            "player_id": player_id,
             "teams": self._teams,
             "captain": self._teams_that_captain,
             "subscriptions": self._subscriptions.to_dictionary(),
             "action_state": self._action_state.to_dictionary()}
 
+    @staticmethod
+    def search_parameters(self, messenger_id):
+        return {"messenger_id": messenger_id}
+
+    @staticmethod
+    def get_player_search(self, player_info):
+        return {"player_id": player_info["player_id"]}
+
     def get_action_state(self):
         """Returns the current state of the action the player is taking"""
         return self._action_state
+
+    def set_action_state(self, action_state):
+        """Setter for the action state"""
+        self._action_state = action_state
+
+    def set_player_info(self, player_info):
+        """Setter for the player info"""
+        self._player_info = player_info
 
     def get_player_info(self):
         """Returns whether information about the player"""
