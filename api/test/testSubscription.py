@@ -21,7 +21,7 @@ class TestSubscription(unittest.TestCase):
         dictionary = subscription.to_dictionary()
         self.assertEqual(dictionary[Subscription.SUBCRIBED_KEY], True)
         self.assertEqual(dictionary[Subscription.RELATIVE_TIME_KEY],
-                         RelativeTimeEnum.MORNING)
+                         RelativeTimeEnum.MORNING.value)
 
     def testToConversion(self):
         """Test that able to create object from dictionary and back"""
@@ -35,7 +35,7 @@ class TestSubscription(unittest.TestCase):
         dictionary = subscription.to_dictionary()
         self.assertEqual(dictionary[Subscription.SUBCRIBED_KEY], False)
         self.assertEqual(dictionary[Subscription.RELATIVE_TIME_KEY],
-                         relative)
+                         relative.value)
         self.assertEqual(dictionary[Subscription.TIME_KEY],
                          "0" + given_time)
 
@@ -111,6 +111,7 @@ class TestSubscription(unittest.TestCase):
                                      Subscription.RELATIVE_TIME_KEY: relative})
         # current and tomorrow are not within range
         self.assertFalse(subscription.should_send_reminder(current))
+        print(tomorrow, current)
         self.assertFalse(subscription.should_send_reminder(tomorrow))
 
         # if comparison is night before then we should send a reminder

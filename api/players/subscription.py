@@ -65,7 +65,7 @@ class Subscription():
         if self.time is not None:
             result[Subscription.TIME_KEY] = self.time.strftime("%H:%M")
         if self.relative_time is not None:
-            result[Subscription.RELATIVE_TIME_KEY] = self.relative_time
+            result[Subscription.RELATIVE_TIME_KEY] = self.relative_time.value
         return result
 
     def is_subscribed(self):
