@@ -7,6 +7,7 @@
 '''
 from api.actions import ActionInterface, ActionState
 from api.actions.welcome import WelcomeAction
+from api.variables import WELCOME_KEY
 from api.variables import ASK_EMAIL_COMMENT, EMAIL_NOT_FOUND,\
     LOCKED_OUT_COMMENT, IMPOSTER_COMMENT
 from api.helper import parse_out_email
@@ -16,7 +17,6 @@ from api.errors import IdentityException
 
 
 class IdentifyUser(ActionInterface):
-    ACTION_IDENTIFIER = "Looking up the user"
     EMAIL_STATE = "Asking for email"
     UNKNOWN_STATE = "Cannot find the user, user should consult convenors"
     IMPOSTER_STATE = "Trying to steal someone's else email"
@@ -53,9 +53,11 @@ class IdentifyUser(ActionInterface):
         try:
             email = messenger_user.get_email()
             if email is not None:
-                player = self.platform.lookup_player_email(email)
+                player = self.platform.lookup_player_by_email(email)
             else:
-                player = self.platform.lookup_player(messenger_user.get_name())
+                name = messenger_user.get_name()
+                player = self.platform.lookup_player_by_name(name)
+                LOGGER.debug("Found player by name:" + str(player))
             return player
         except IdentityException:
             return None
@@ -94,7 +96,7 @@ class IdentifyUser(ActionInterface):
             try:
                 # lookup their player info and make sure they are not posing
                 # as someone else
-                player_info = self.database.lookup_player_email(email.lower())
+                player_info = self.platform.lookup_player_email(email.lower())
                 if not self.database.already_in_league(player_info):
                     return self.successful(player, player_info)
                 sender = self.message.get_sender_id()
@@ -120,12 +122,13 @@ class IdentifyUser(ActionInterface):
 
     def successful(self, player, player_info):
         """Upon being successful update the user to the next action"""
-        LOGGER.info("Identified player: {}".format(player["player_name"]))
-        next_action = ActionState(key=WelcomeAction.ACTION_IDENTIFIER)
-        player.set_action_state(next_action)
+        LOGGER.info("Identified player: " + str(player_info))
+
+        player.set_action_state(ActionState(key=WELCOME_KEY))
         player.set_player_info(player_info)
         self.database.save_player(player)
-        return WelcomeAction(self.database,
-                             self.platform,
-                             self.messenger,
-                             self.message).process()
+        next_action = self.action_map[WELCOME_KEY]
+        return next_action(self.database,
+                           self.platform,
+                           self.messenger,
+                           self.message).process(self.action_map)
