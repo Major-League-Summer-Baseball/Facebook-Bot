@@ -17,13 +17,13 @@ class DatabaseService():
 
     def get_player(self, messenger_id):
         """Returns the user object for the given messenger id"""
-        search_parameters = Player.search_parameters(messenger_id)
+        search_parameters = Player.get_messenger_search(messenger_id)
         player_dictionary = self.mongo.db.users.find_one(search_parameters)
         return Player(dictionary=player_dictionary)
 
     def create_player(self, sender_id, name):
         """Creates a user with the given sender_id and given name"""
-        player = Player(messenger_id=sender_id, messenger_name=name)
+        player = Player(messenger_id=sender_id, name=name)
         self.mongo.db.users.insert(player)
         return player
 

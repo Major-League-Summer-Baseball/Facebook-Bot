@@ -86,11 +86,13 @@ class Player():
             "action_state": self._action_state.to_dictionary()}
 
     @staticmethod
-    def search_parameters(self, messenger_id):
+    def get_messenger_search(self, messenger_id):
+        """Returns the search parameters when searching by messenger id"""
         return {"messenger_id": messenger_id}
 
     @staticmethod
     def get_player_search(self, player_info):
+        """Returns the search parameters when searching by player info"""
         return {"player_id": player_info["player_id"]}
 
     def get_action_state(self):
