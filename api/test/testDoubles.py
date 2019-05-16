@@ -5,6 +5,7 @@
 @project: Facebook Bot
 @summary: Test doubles for various objects that are used for testing
 '''
+from api.players.player import Player
 from api.messenger.user import User
 from api.message import Message
 from api.errors import IdentityException
@@ -47,9 +48,10 @@ class MessengerStub():
         """Set the mock user to lookup"""
         if isinstance(user, User):
             self.user = user
-        raise TestDoubleException("Illegal mock user")
+        else:
+            raise TestDoubleException("Illegal mock user")
 
-    def lookup_user_id(self):
+    def lookup_user_id(self, messenger_id):
         """Return the mock user object"""
         return self.user
 
@@ -57,75 +59,64 @@ class MessengerStub():
 class PlatformStub():
     """Stub the platform calls"""
 
-    def __init__(self, player=None):
+    def __init__(self, player_by_email=None, player_by_name=None):
         """Constructor"""
-        self.player = player
+        self.player_by_email = player_by_email
+        self.player_by_name = player_by_name
 
-    def set_mock_player(self, player):
+    def set_mock_player(self, player_by_email=None, player_by_name=None):
         """Set the mock player the platform should return upon lookups"""
-        self.player = player
+        if player_by_email is not None:
+            self.player_by_email = player_by_email
+        if player_by_name is not None:
+            self.player_by_name = player_by_name
 
-    def lookup_player(self, name):
+    def lookup_player_by_name(self, name):
         """Mock method that just returns mock player"""
-        return self.player
+        return self.player_by_name
 
-    def lookup_player_email(self, email):
+    def lookup_player_by_email(self, email):
         """Mock method that just returns mock player"""
-        if self.player is None:
+        if self.player_by_email is None:
             raise IdentityException("Not sure who you are, ask admin")
-        return self.player
-
-
-class UserStub():
-    """Class that stubs the users in a db object on a mongo db"""
-    USER_ID_KEY = "messenger_id"
-
-    def __init__(self):
-        """Constructor"""
-        self.users = []
-
-    def find_one(self, search):
-        """Find a user that matches the given search criteria """
-        found = None
-        for user in self.users:
-            if self._match_criteria(user, search):
-                found = user
-                break
-        return found
-
-    def _match_criteria(self, user, criteria):
-        """Returns whether the user matches the search criteria"""
-        for key, value in criteria.items():
-            if key not in user.keys() or user[key] != value:
-                return False
-        return True
-
-    def insert_one(self, user):
-        """Inserts the given user into the users list"""
-        self.users.append(user)
-
-    def save(self, user):
-        """Saves the given user"""
-        pos = -1
-        for i, check in enumerate(self.users):
-            if check[UserStub.USER_ID_KEY] == user[UserStub.USER_ID_KEY]:
-                pos = i
-        if pos != -1:
-            self.users.pop(pos)
-            self.users.append(user)
-
-
-class DbStub():
-    """Class that stubs the db object on a mongo db"""
-
-    def __init__(self):
-        """Constructor"""
-        self.users = UserStub()
+        return self.player_by_email
 
 
 class MongoStub():
     """Class that stubs mongo for testing database interaction"""
 
-    def __init__(self):
+    def __init__(self, player=None, already_in_league=False):
         """Constructor"""
-        self.db = DbStub()
+        self.created_player = None
+        self.player = player
+        self.saved_player = None
+        self._already_in_league = already_in_league
+
+    def save_player(self, player):
+        """Stub for the save player"""
+        self.saved_player = player
+
+    def inspect_saved_player(self):
+        """Returns what player object was saved using save player"""
+        return self.saved_player
+
+    def set_player(self, player):
+        """Helper for set the player to return"""
+        self.player = player
+
+    def get_player(self, messenger_id):
+        """Stub for the get player"""
+        return self.player
+
+    def already_in_league(self, player_info):
+        """Stub for whether the player is already in the league or not"""
+        return self._already_in_league
+
+    def set_already_in_league(self, already_in_league):
+        """Set what to return for already in the league"""
+        self._already_in_league = already_in_league
+
+    def create_player(self, sender_id, name):
+        self.created_player = Player(messenger_id=sender_id,
+                                     name=name)
+        return self.created_player
