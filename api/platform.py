@@ -3,7 +3,7 @@
 @author: 2019-04-29
 @organization: MLSB
 @project: Facebook Bot
-@summary: Holds an implementation of the interaction witht the platform
+@summary: Holds an implementation of the interaction with the MLSB platform
 '''
 import requests
 from api.logging import LOGGER
@@ -15,7 +15,7 @@ from api.variables import HEADERS, BASEURL
 
 class PlatformService():
 
-    def lookup_player(self, name):
+    def lookup_player_by_name(self, name):
         """Returns a lookup for the player in the league
 
         Parameter:
@@ -31,15 +31,18 @@ class PlatformService():
                                  headers=HEADERS)
         players = response.json()
         if (response.status_code != 200):
+            LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
         if len(players) == 0 or len(players) > 1:
             player_info = None
         else:
             # information was found about the player
             player_info = players[0]
+            LOGGER.debug("Found player information for {}".format(name))
+            LOGGER.debug(player_info)
         return player_info
 
-    def lookup_player_email(self, email):
+    def lookup_player_by_email(self, email):
         """Returns a lookup for a player in the league using their email provided
 
         Parameters:
@@ -52,12 +55,15 @@ class PlatformService():
         """
         submission = {"email": email}
         response = requests.post(BASEURL + "api/view/player_lookup",
-                          params=submission,
-                          headers=HEADERS)
+                                 params=submission,
+                                 headers=HEADERS)
         if response.status_code != 200:
+            LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
         players = response.json()
         if len(players) == 0:
+            LOGGER.debug(
+                "{} not associated with anyone in the league".format(email))
             raise IdentityException("Not sure who you are, ask admin")
         return players[0]
 
@@ -75,6 +81,7 @@ class PlatformService():
                                  params=params,
                                  headers=HEADERS)
         if (response.status_code != 200):
+            LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
         # now look up teams
         captain = []
@@ -99,5 +106,6 @@ class PlatformService():
                                  data=params,
                                  headers=HEADERS)
         if (response.status_code != 200):
+            LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
         return response.json()
