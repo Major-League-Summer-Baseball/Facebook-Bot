@@ -17,11 +17,10 @@ class TestActionBase(unittest.TestCase):
         self.db = MongoStub()
         self.platform = PlatformStub()
         self.messenger = MessengerStub()
-        self.action = None
 
-    def init_action(self, action_class, message):
-        """Will commonly need to init action"""
-        self.action = action_class(self.db,
-                                   self.platform,
-                                   self.messenger,
-                                   self.message)
+    def create_action(self, action_class, message):
+        """Will commonly need to create actions"""
+        return action_class(self.db,
+                            self.platform,
+                            self.messenger,
+                            message)
