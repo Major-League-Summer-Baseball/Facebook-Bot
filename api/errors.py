@@ -10,6 +10,10 @@
 PLATFORMMESSAGE = "Platform not available - try again later"
 
 
+class ActionStateException(Exception):
+    pass
+
+
 class DatabaseException(Exception):
     pass
 
