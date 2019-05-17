@@ -10,6 +10,7 @@
     All actions should keep track of their own state
 '''
 from api.errors import ActionException
+from copy import deepcopy
 
 
 class ActionState():
@@ -34,7 +35,7 @@ class ActionState():
 
     def get_data(self):
         """Get the data dictionary of the action"""
-        return self._data
+        return deepcopy(self._data)
 
     def set_data(self, data):
         """Set the data dictionary of the action"""
@@ -66,6 +67,11 @@ class ActionState():
         return {"id": self._key,
                 "data": self._data,
                 "state": self._state}
+
+    def __str__(self):
+        return "Id: {}, data:{}:, state:{}".format(self._key,
+                                                   str(self._data),
+                                                   self._state)
 
 
 class ActionInterface():
