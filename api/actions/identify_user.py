@@ -6,10 +6,8 @@
 @summary: Action to determine the to identify user to someone in the legaue
 '''
 from api.actions import ActionInterface, ActionState
-from api.actions.welcome import WelcomeAction
-from api.variables import WELCOME_KEY
 from api.variables import ASK_EMAIL_COMMENT, EMAIL_NOT_FOUND,\
-    LOCKED_OUT_COMMENT, IMPOSTER_COMMENT
+    LOCKED_OUT_COMMENT, IMPOSTER_COMMENT, WELCOME_LEAGUE, WELCOME_KEY
 from api.helper import parse_out_email
 from api.logging import LOGGER
 from api.message import Message
@@ -43,7 +41,7 @@ class IdentifyUser(ActionInterface):
 
             # otherwise got to figure them out by asking for their email
             return self.check_email(player)
-        elif player.get_action_state().set_state(IdentifyUser.EMAIL_STATE):
+        elif player.get_action_state().get_state() == IdentifyUser.EMAIL_STATE:
             # try figuring out who they are by their email
             self.check_email(player)
 
@@ -65,15 +63,19 @@ class IdentifyUser(ActionInterface):
     def ask_email(self, player):
         """Sends a message asking for the players email"""
 
+        # these are copies so can do what we like
+        state = player.get_action_state()
+        state_data = state.get_data()
+
         # set the number of wrong guesses and increment it
-        state_data = player.get_action_state().get_data()
         if "wrongGuesses" not in state_data.keys():
             state_data["wrongGuesses"] = -1
         state_data["wrongGuesses"] += 1
 
         # if they have guessed wrong three times then lock them out
         if state_data["wrongGuesses"] > 3:
-            player.get_action_state().set_state(IdentifyUser.LOCKED_OUT_STATE)
+            LOGGER.info("Player ({}) is locked out".format(str(player)))
+            state.set_state(IdentifyUser.LOCKED_OUT_STATE)
             message = Message(self.message.get_sender_id(),
                               message=LOCKED_OUT_COMMENT)
             self.messenger.send_message(message)
@@ -83,8 +85,11 @@ class IdentifyUser(ActionInterface):
             message = Message(self.message.get_sender_id(),
                               message=ASK_EMAIL_COMMENT)
             self.messenger.send_message(message)
-            player.get_action_state().set_state(IdentifyUser.EMAIL_STATE)
-        player.get_action_state().set_data(state_data)
+            state.set_state(IdentifyUser.EMAIL_STATE)
+
+        # now want to save the changes we made
+        state.set_data(state_data)
+        player.set_action_state(state)
         self.database.save_player(player)
 
     def check_email(self, player):
@@ -96,19 +101,23 @@ class IdentifyUser(ActionInterface):
             try:
                 # lookup their player info and make sure they are not posing
                 # as someone else
-                player_info = self.platform.lookup_player_email(email.lower())
+                player_info = self.platform.lookup_player_by_email(
+                    email.lower())
                 if not self.database.already_in_league(player_info):
                     return self.successful(player, player_info)
                 sender = self.message.get_sender_id()
-                message = "User posing as someone else: {}".format(sender)
+                message = "User {} is posing as {}".format(sender,
+                                                           str(player_info))
                 LOGGER.warning(message)
                 state = IdentifyUser.IMPOSTER_STATE
-                player.get_action_state().set_state(state)
+                action_state = player.get_action_state()
+                action_state.set_state(state)
+                player.set_action_state(action_state)
                 self.database.save_player(player)
 
                 # let the user know their player account already in use
-                self.message.send_message(Message(sender,
-                                                  message=IMPOSTER_COMMENT))
+                self.messenger.send_message(Message(sender,
+                                                    message=IMPOSTER_COMMENT))
 
             except IdentityException as e:
                 LOGGER.debug("Unable to find email: {}".format(email))
@@ -124,9 +133,17 @@ class IdentifyUser(ActionInterface):
         """Upon being successful update the user to the next action"""
         LOGGER.info("Identified player: " + str(player_info))
 
+        # send them a message - welcoming them to the league
+        message = Message(self.message.get_sender_id(),
+                          message=WELCOME_LEAGUE.format(player.get_name()))
+        self.messenger.send_message(message)
+
+        # update the player for the next action
         player.set_action_state(ActionState(key=WELCOME_KEY))
         player.set_player_info(player_info)
         self.database.save_player(player)
+
+        # proceed to complete next action
         next_action = self.action_map[WELCOME_KEY]
         return next_action(self.database,
                            self.platform,
