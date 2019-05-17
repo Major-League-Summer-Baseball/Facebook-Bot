@@ -8,6 +8,7 @@
 from api.players.subscription import Subscriptions
 from api.actions import ActionState
 from api.variables import IDENTIFY_KEY
+from api.errors import ActionStateException, SubscriptionException
 
 
 class Player():
@@ -95,13 +96,20 @@ class Player():
         """Returns the search parameters when searching by player info"""
         return {"player_id": player_info["player_id"]}
 
+    def get_name(self):
+        """Gets the name of the player"""
+        return self._messenger_name
+
     def get_action_state(self):
-        """Returns the current state of the action the player is taking"""
-        return self._action_state
+        """Returns a copy of the state of the action the player is taking"""
+        return ActionState(None, dictionary=self._action_state.to_dictionary())
 
     def set_action_state(self, action_state):
         """Setter for the action state"""
-        self._action_state = action_state
+        if isinstance(action_state, ActionState):
+            self._action_state = action_state
+        else:
+            raise ActionStateException("Incorrect type: expecting ActionState")
 
     def set_player_info(self, player_info):
         """Setter for the player info"""
@@ -115,9 +123,17 @@ class Player():
         """Return the id associated with this player"""
         return self._player_info["player_id"]
 
-    def get_subscription(self):
-        """Returns the what the player is subscribed to"""
-        return self._subscription
+    def get_subscriptions(self):
+        """Returns a copy of the subscriptions"""
+        return Subscriptions(dictionary=self._subscriptions.to_dictionary())
+
+    def set_subscriptions(self, subscriptions):
+        """Sets the subscriptions"""
+        if isinstance(subscriptions, Subscriptions):
+            self._subscriptions = subscriptions
+        else:
+            message = "Incorrect type: expecting Subscriptions"
+            raise SubscriptionException(message)
 
     def is_captain(self, team_id):
         """Returns whether the given player is a captain"""
@@ -165,3 +181,6 @@ class Player():
             self._teams_that_captain.remove(team["team_id"])
         except ValueError:
             pass
+
+    def __str__(self):
+        return "{} - {}".format(self._messenger_name, self._messenger_id)
