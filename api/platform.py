@@ -69,13 +69,13 @@ class PlatformService():
             raise IdentityException("Not sure who you are, ask admin")
         return players[0]
 
-    def is_player_captain(self, player):
-        """Updates a player_info and checks if they are a captain
+    def lookup_teams_player_associated_with(self, player):
+        """Returns a list of teams that the given player is associated with
 
         Parameters:
             player: the player (Player)
         Returns:
-            captain: a list of team they are the captain for
+            teams: a list of teams they are associated with (json)
         """
         player_id = player.get_player_id()
         params = {"player_id": player_id}
@@ -85,14 +85,7 @@ class PlatformService():
         if (response.status_code != 200):
             LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
-        # now look up teams
-        captain = []
-        teams = response.json()
-        for team in teams:
-            if (team['captain'] is not None and
-                    team['captain']['player_id'] == player_id):
-                captain.append(team["team_id"])
-        return captain
+        return response.json()
 
     def get_upcoming_games(self, player):
         """Returns league leaders for some stat
