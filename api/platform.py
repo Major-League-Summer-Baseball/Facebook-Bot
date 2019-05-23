@@ -8,12 +8,14 @@
 import requests
 from api.logging import LOGGER
 from api.errors import PlatformException,\
-    PLATFORMMESSAGE, NotCaptainException, IdentityException,\
-    BatterException
-from api.variables import HEADERS, BASEURL
+    PLATFORMMESSAGE, IdentityException
 
 
 class PlatformService():
+
+    def __init__(self, headers, baseurl):
+        self.headers = headers
+        self.baseurl = baseurl
 
     def lookup_player_by_name(self, name):
         """Returns a lookup for the player in the league
@@ -26,9 +28,9 @@ class PlatformService():
             player: None if can't determine player otherwise a player object
         """
         submission = {"player_name": name, "active": 1}
-        response = requests.post(BASEURL + "api/view/player_lookup",
+        response = requests.post(self.baseurl + "api/view/player_lookup",
                                  params=submission,
-                                 headers=HEADERS)
+                                 headers=self.headers)
         players = response.json()
         if (response.status_code != 200):
             LOGGER.critical("Unable to contact the MLSB platform")
@@ -54,9 +56,9 @@ class PlatformService():
             player_info: the player info from MLSB
         """
         submission = {"email": email}
-        response = requests.post(BASEURL + "api/view/player_lookup",
+        response = requests.post(self.baseurl + "api/view/player_lookup",
                                  params=submission,
-                                 headers=HEADERS)
+                                 headers=self.headers)
         if response.status_code != 200:
             LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
@@ -77,9 +79,9 @@ class PlatformService():
         """
         player_id = player.get_player_id()
         params = {"player_id": player_id}
-        response = requests.post(BASEURL + "api/view/players/team_lookup",
+        response = requests.post(self.baseurl + "api/view/players/team_lookup",
                                  params=params,
-                                 headers=HEADERS)
+                                 headers=self.headers)
         if (response.status_code != 200):
             LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
@@ -92,7 +94,7 @@ class PlatformService():
                 captain.append(team["team_id"])
         return captain
 
-    def get_upcoming_games(player):
+    def get_upcoming_games(self, player):
         """Returns league leaders for some stat
 
         Parameters:
@@ -102,9 +104,9 @@ class PlatformService():
         """
         player_id = player.get_player_id()
         params = {"player_id": player_id}
-        response = requests.post(BASEURL + "api/bot/upcoming_games",
+        response = requests.post(self.baseurl + "api/bot/upcoming_games",
                                  data=params,
-                                 headers=HEADERS)
+                                 headers=self.headers)
         if (response.status_code != 200):
             LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
