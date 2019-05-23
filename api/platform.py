@@ -6,6 +6,7 @@
 @summary: Holds an implementation of the interaction with the MLSB platform
 '''
 import requests
+from api.helper import get_this_year
 from api.logging import LOGGER
 from api.errors import PlatformException,\
     PLATFORMMESSAGE, IdentityException
@@ -80,6 +81,16 @@ class PlatformService():
         player_id = player.get_player_id()
         params = {"player_id": player_id}
         response = requests.post(self.baseurl + "api/view/players/team_lookup",
+                                 params=params,
+                                 headers=self.headers)
+        if (response.status_code != 200):
+            LOGGER.critical("Unable to contact the MLSB platform")
+            raise PlatformException(PLATFORMMESSAGE)
+        return response.json()
+
+    def lookup_all_teams(self):
+        params = {"year": get_this_year()}
+        response = requests.post(self.baseurl + "api/view/teams",
                                  params=params,
                                  headers=self.headers)
         if (response.status_code != 200):
