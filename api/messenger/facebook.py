@@ -48,7 +48,7 @@ class FacebookMessenger(Messenger):
     URL = "https://graph.facebook.com"
     VERSION = "v3.3"
     MALES = ["male", "m"]
-    FIELDS = "fields=first_name,last_name,gender,email"
+    FIELDS = "fields=id,name,gender,email"
 
     def __init__(self, token):
         self.token = token
@@ -66,8 +66,8 @@ class FacebookMessenger(Messenger):
         url = ("{}/{}/{}?{}&access_token={}".format(
             FacebookMessenger.URL,
             FacebookMessenger.VERSION,
-            FacebookMessenger.FIELDS,
             user_id,
+            FacebookMessenger.FIELDS,
             PAGE_ACCESS_TOKEN))
         request_response = requests.get(url)
         if request_response.status_code != 200:
@@ -75,8 +75,9 @@ class FacebookMessenger(Messenger):
             LOGGER.critical(str(request_response.json()))
             raise FacebookException("Facebook services not available")
         data = request_response.json()
+        LOGGER.debug("Data from looking up user" + str(data))
         # now we know the person's facebook name
-        name = data['first_name'] + " " + data['last_name']
+        name = data['name']
         email = None
         gender = None
         if "email" in data.keys():
@@ -139,8 +140,8 @@ class FacebookMessenger(Messenger):
     def _send_message(self, message_text, sender_id):
         """Sends the given message to the given id"""
         message_data = {
-            "recipent": {"id": message_text},
-            "message": {"text": sender_id}
+            "recipient": {"id": sender_id},
+            "message": {"text": message_text}
         }
         self._send_data(message_data)
 
@@ -228,6 +229,7 @@ class FacebookMessenger(Messenger):
             data: the data to send back (message, quick replies, buttons)
         """
         params = {"access_token": self.token}
+        print(data)
         data = json.dumps(data)
         request_url = "{}/{}/me/messages".format(self.URL, self.VERSION)
         request_response = requests.post(request_url,
