@@ -6,8 +6,9 @@
 @summary: Action to determine the to identify user to someone in the legaue
 '''
 from api.actions import ActionInterface, ActionState
-from api.variables import ASK_EMAIL_COMMENT, EMAIL_NOT_FOUND,\
-    LOCKED_OUT_COMMENT, IMPOSTER_COMMENT, WELCOME_LEAGUE, WELCOME_KEY
+from api.settings.message_strings import ASK_EMAIL, EMAIL_NOT_FOUND,\
+    LOCKED_OUT, IMPOSTER, WELCOME_LEAGUE
+from api.settings.action_keys import WELCOME_KEY
 from api.helper import parse_out_email
 from api.logging import LOGGER
 from api.message import Message
@@ -77,13 +78,13 @@ class IdentifyUser(ActionInterface):
             LOGGER.info("Player ({}) is locked out".format(str(player)))
             state.set_state(IdentifyUser.LOCKED_OUT_STATE)
             message = Message(self.message.get_sender_id(),
-                              message=LOCKED_OUT_COMMENT)
+                              message=LOCKED_OUT)
             self.messenger.send_message(message)
 
         # otherwise just ask them again
         else:
             message = Message(self.message.get_sender_id(),
-                              message=ASK_EMAIL_COMMENT)
+                              message=ASK_EMAIL)
             self.messenger.send_message(message)
             state.set_state(IdentifyUser.EMAIL_STATE)
 
@@ -117,7 +118,7 @@ class IdentifyUser(ActionInterface):
 
                 # let the user know their player account already in use
                 self.messenger.send_message(Message(sender,
-                                                    message=IMPOSTER_COMMENT))
+                                                    message=IMPOSTER))
 
             except IdentityException as e:
                 LOGGER.debug("Unable to find email: {}".format(email))
