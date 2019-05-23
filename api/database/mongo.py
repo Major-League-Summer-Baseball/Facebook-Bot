@@ -5,7 +5,6 @@
 @project: Facebook Bot
 @summary: Holds an implementation of the the database service
 '''
-from api.logging import LOGGER
 from api.errors import DatabaseException
 from api.players.player import Player
 
@@ -15,6 +14,16 @@ class DatabaseService():
 
     def __init__(self, mongo):
         self.mongo = mongo
+
+    def get_convenor_email_list(self):
+        """Returns a list of emails that should be treated as convenors"""
+        entries = self.mongo.db.convenors.find({})
+        convenor_list = []
+        for entry in entries:
+            if "emails" in entry.keys():
+                for email in entry["emails"]:
+                    convenor_list.append(email)
+        return convenor_list
 
     def get_player(self, messenger_id):
         """Returns the user object for the given messenger id"""
