@@ -84,11 +84,16 @@ class Message():
         Holds information about the message that was sent
     """
 
-    def __init__(self, sender_id, message=None, payload=None):
+    def __init__(self,
+                 sender_id,
+                 recipient_id=None,
+                 message=None,
+                 payload=None):
         """Constructor"""
         self._message = message
         self._payload = payload
         self._sender_id = sender_id
+        self._recipient_id = recipient_id
 
     def get_sender_id(self):
         """Gets the the sender id"""
@@ -101,3 +106,13 @@ class Message():
     def get_payload(self):
         """Gets the payload of the message"""
         return self._payload
+
+    def get_recipient_id(self):
+        """Gets the recipient id"""
+        return self._recipient_id
+
+    def __str__(self):
+        """Returns string of the message"""
+        return "{}: {} from {}".format(self._sender_id,
+                                       self._message,
+                                       self._recipient_id)
