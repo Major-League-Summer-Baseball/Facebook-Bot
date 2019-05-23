@@ -116,10 +116,6 @@ FUN_COMMENT = ["",
                "What fun",
                "Are we having too fun?"]
 
-# action keys
-WELCOME_KEY = "welcome"
-IDENTIFY_KEY = "identify user"
-HOME_KEY = "homescreen"
 
 # the various states of the bot
 # these are not displayed to the user
