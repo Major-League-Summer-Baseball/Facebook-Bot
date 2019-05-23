@@ -7,6 +7,7 @@
 '''
 import sys
 from json import loads as loader
+from datetime import datetime
 
 
 def parse_out_email(message_string):
@@ -49,6 +50,11 @@ def parse_number(text):
         except ValueError:
             pass
     return number
+
+
+def get_this_year():
+    """Return the current year"""
+    return datetime.now().year
 
 
 def loads(data):
