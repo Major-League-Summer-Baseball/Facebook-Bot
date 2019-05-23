@@ -151,8 +151,8 @@ class Player():
         """Gives the player convenor permissions"""
         self._convenor = True
 
-    def demote_convenor(self):
-        """Demote the player's convenor permissions"""
+    def remove_convenor(self):
+        """Remove the player's convenor permissions"""
         self._convenor = False
 
     def get_team_ids(self):
@@ -161,13 +161,16 @@ class Player():
 
     def add_team(self, team):
         """Add a team to the list of teams the player is part of"""
-        # just need the ids
-        self._teams.append(team["team_id"])
+        team_id = team.get("team_id", None)
+        if team_id is not None and team_id not in self._teams:
+            self._teams.append(team["team_id"])
+            self._subscriptions.subscribe_to_team(team['team_id'])
 
     def remove_team(self, team):
         """Removes the player from the given team"""
         try:
             self._teams.remove(team["team_id"])
+            self._subscriptions.unsubscribe_to_team(team["team_id"])
         except ValueError:
             pass
 
@@ -175,9 +178,11 @@ class Player():
         """Gets a list of team ids that the player is captain of"""
         return self._teams_that_captain
 
-    def add_captain(self, team):
+    def make_captain(self, team):
         """Adds the player as a captain"""
-        self._teams_that_captain.append(team["team_id"])
+        team_id = team.get("team_id", None)
+        if team_id is not None and team_id not in self._teams_that_captain:
+            self._teams_that_captain.append(team_id)
 
     def remove_captain(self, team):
         """Remove the captainship from the player for the given team"""
