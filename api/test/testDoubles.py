@@ -5,10 +5,18 @@
 @project: Facebook Bot
 @summary: Test doubles for various objects that are used for testing
 '''
+from api.actions import ActionInterface
 from api.players.player import Player
 from api.messenger.user import User
 from api.message import Message
 from api.errors import IdentityException
+
+
+class NoAction(ActionInterface):
+    """Stub for the next action to allow testing individual actions"""
+
+    def process(self, action_map):
+        return
 
 
 class TestDoubleException(Exception):
@@ -54,6 +62,9 @@ class MessengerStub():
     def lookup_user_id(self, messenger_id):
         """Return the mock user object"""
         return self.user
+
+    def get_convenor_email_list(self):
+        return
 
 
 class PlatformStub():
