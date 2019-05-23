@@ -187,7 +187,7 @@ class Subscriptions():
         """Subcribed to the league"""
         self.league = True
 
-    def unsubscribe_to_league(self):
+    def unsubscribe_from_league(self):
         """Unsubscribe from the league"""
         self.league = False
 
@@ -215,6 +215,6 @@ class Subscriptions():
             subscription = Subscription()
         self.team_lookup[str(team_id)] = subscription
 
-    def unsubscribe_to_team(self, team_id):
+    def unsubscribe_from_team(self, team_id):
         """Unsubscribe from the given team"""
         self.team_lookup.pop(str(team_id), None)
