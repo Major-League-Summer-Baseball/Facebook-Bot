@@ -8,7 +8,7 @@
 from api.players.subscription import Subscriptions
 from api.players.player import Player
 from api.actions import ActionState
-from api.variables import IDENTIFY_KEY
+from api.settings.action_keys import IDENTIFY_KEY
 import unittest
 
 
