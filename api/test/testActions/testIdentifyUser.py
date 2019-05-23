@@ -5,15 +5,15 @@
 @project: Facebook Bot
 @summary: Test helper functions
 '''
+from api.test.testDoubles import NoAction
 from api.messenger.user import User
 from api.message import Message
 from api.players.player import Player
 from api.test.testActions import TestActionBase
-from api.test.testDoubles import MessengerStub, MongoStub, PlatformStub
 from api.actions.identify_user import IdentifyUser
-from api.actions.action_map import ACTION_MAP
-from api.variables import IDENTIFY_KEY, WELCOME_KEY, ASK_EMAIL_COMMENT,\
-    WELCOME_LEAGUE, IMPOSTER_COMMENT, LOCKED_OUT_COMMENT
+from api.settings.action_keys import IDENTIFY_KEY, WELCOME_KEY
+from api.settings.message_strings import ASK_FOR_EMAIL, WELCOME_LEAGUE,\
+    IMPOSTER, LOCKED_OUT
 
 import unittest
 
@@ -21,6 +21,7 @@ import unittest
 class TestIdentifyUser(TestActionBase):
 
     def setUp(self):
+        self.action_map = {WELCOME_KEY: NoAction}
         super(TestIdentifyUser, self).setUp()
 
     def testFirstMessageDoNotMatch(self):
@@ -41,7 +42,7 @@ class TestIdentifyUser(TestActionBase):
 
         # create the action and process the message
         identify = self.create_action(IdentifyUser, message)
-        identify.process(ACTION_MAP)
+        identify.process(self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -62,7 +63,7 @@ class TestIdentifyUser(TestActionBase):
         message = self.messenger.get_message()
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
-        self.assertEqual(ASK_EMAIL_COMMENT, message.get_message())
+        self.assertEqual(ASK_FOR_EMAIL, message.get_message())
 
     def testFirstMessageMatchEmail(self):
         """
@@ -87,7 +88,7 @@ class TestIdentifyUser(TestActionBase):
 
         # create the action and process the message
         identify = self.create_action(IdentifyUser, message)
-        identify.process(ACTION_MAP)
+        identify.process(self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -138,7 +139,7 @@ class TestIdentifyUser(TestActionBase):
 
         # create the action and process the message
         identify = self.create_action(IdentifyUser, message)
-        identify.process(ACTION_MAP)
+        identify.process(self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -191,7 +192,7 @@ class TestIdentifyUser(TestActionBase):
 
         # create the action and process the message
         identify = self.create_action(IdentifyUser, message)
-        identify.process(ACTION_MAP)
+        identify.process(self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -212,7 +213,7 @@ class TestIdentifyUser(TestActionBase):
         message = self.messenger.get_message()
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
-        self.assertEqual(ASK_EMAIL_COMMENT, message.get_message())
+        self.assertEqual(ASK_FOR_EMAIL, message.get_message())
 
     def testMessageWithTheirEmailButImposter(self):
         """
@@ -252,7 +253,7 @@ class TestIdentifyUser(TestActionBase):
 
         # create the action and process the message
         identify = self.create_action(IdentifyUser, message)
-        identify.process(ACTION_MAP)
+        identify.process(self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -273,7 +274,7 @@ class TestIdentifyUser(TestActionBase):
         message = self.messenger.get_message()
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
-        self.assertEqual(IMPOSTER_COMMENT, message.get_message())
+        self.assertEqual(IMPOSTER, message.get_message())
 
     def testMessageWithTheirEmailLockedOut(self):
         """
@@ -309,7 +310,7 @@ class TestIdentifyUser(TestActionBase):
 
         # create the action and process the message
         identify = self.create_action(IdentifyUser, message)
-        identify.process(ACTION_MAP)
+        identify.process(self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -331,7 +332,7 @@ class TestIdentifyUser(TestActionBase):
         message = self.messenger.get_message()
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
-        self.assertEqual(LOCKED_OUT_COMMENT, message.get_message())
+        self.assertEqual(LOCKED_OUT, message.get_message())
 
     def testMessageWithTheirEmailSuccessful(self):
         """
@@ -368,7 +369,7 @@ class TestIdentifyUser(TestActionBase):
 
         # create the action and process the message
         identify = self.create_action(IdentifyUser, message)
-        identify.process(ACTION_MAP)
+        identify.process(self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
