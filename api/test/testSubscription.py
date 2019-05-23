@@ -186,12 +186,12 @@ class TestSubscriptions(unittest.TestCase):
         subscribed_teams = {"1": Subscription().to_dictionary(),
                             "2": Subscription().to_dictionary()}
         subscriptions = Subscriptions(dictionary=subscribed_teams)
-        subscriptions.unsubscribe_to_team(1)
+        subscriptions.unsubscribe_from_team(1)
         self.assertFalse(subscriptions.is_subscribed_to_team(1))
         self.assertFalse(subscriptions.is_subscribed_to_team("1"))
 
         # string or number should work
-        subscriptions.unsubscribe_to_team("2")
+        subscriptions.unsubscribe_from_team("2")
         self.assertFalse(subscriptions.is_subscribed_to_team(2))
         self.assertFalse(subscriptions.is_subscribed_to_team("2"))
 
