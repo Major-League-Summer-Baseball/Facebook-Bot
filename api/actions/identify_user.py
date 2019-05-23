@@ -6,7 +6,7 @@
 @summary: Action to determine the to identify user to someone in the legaue
 '''
 from api.actions import ActionInterface, ActionState
-from api.settings.message_strings import ASK_EMAIL, EMAIL_NOT_FOUND,\
+from api.settings.message_strings import ASK_FOR_EMAIL, EMAIL_NOT_FOUND,\
     LOCKED_OUT, IMPOSTER, WELCOME_LEAGUE
 from api.settings.action_keys import WELCOME_KEY
 from api.helper import parse_out_email
@@ -84,7 +84,7 @@ class IdentifyUser(ActionInterface):
         # otherwise just ask them again
         else:
             message = Message(self.message.get_sender_id(),
-                              message=ASK_EMAIL)
+                              message=ASK_FOR_EMAIL)
             self.messenger.send_message(message)
             state.set_state(IdentifyUser.EMAIL_STATE)
 
