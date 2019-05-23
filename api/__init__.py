@@ -20,6 +20,12 @@ from api.errors import FacebookException, IdentityException,\
     BatterException
 from random import randint
 from base64 import b64encode
+from api.messenger.facebook import FacebookMessenger
+from api.platform import PlatformService
+from api.database.mongo import DatabaseService
+from api.actions.action_map import ACTION_MAP
+from api.actions.action_mapper import ActionMapper
+
 from api.variables import *
 import unittest
 
@@ -27,6 +33,11 @@ app = Flask(__name__)
 app.config['MONGO_URI'] = URL
 app.config.from_object(__name__)
 mongo = PyMongo(app)
+
+# these objects use for multiple requests
+MESSENGER = FacebookMessenger(PAGE_ACCESS_TOKEN)
+PLATFORM = PlatformService(HEADERS, BASEURL)
+DATABASE = DatabaseService(mongo)
 
 # now can import db
 from api.db import get_user, lookup_player, save_user, update_player,\
@@ -40,7 +51,7 @@ def verify():
     # when the endpoint is registered as a webhook, it must echo back
     # the 'hub.challenge' value it receives in the query arguments
     if (request.args.get("hub.mode") == "subscribe" and
-        request.args.get("hub.challenge")):
+            request.args.get("hub.challenge")):
         if (not request.args.get("hub.verify_token") == VERIFY_TOKEN):
             log("Not right token")
             return "Verification token mismatch", 403
@@ -58,10 +69,10 @@ def typing_on(sender_id):
         "Content-Type": "application/json"
     }
     data = {
-            "recipient": {
-                         "id": sender_id},
-            "sender_action": "typing_on"
-        }
+        "recipient": {
+            "id": sender_id},
+        "sender_action": "typing_on"
+    }
     data = json.dumps(data)
     r = requests.post("https://graph.facebook.com/v2.6/me/messages",
                       headers=headers, data=data, params=params)
@@ -80,10 +91,10 @@ def typing_off(sender_id):
         "Content-Type": "application/json"
     }
     data = {
-            "recipient": {
-                         "id": sender_id},
-            "sender_action": "typing_off"
-        }
+        "recipient": {
+            "id": sender_id},
+        "sender_action": "typing_off"
+    }
     data = json.dumps(data)
     r = requests.post("https://graph.facebook.com/v2.6/me/messages",
                       headers=headers, data=data, params=params)
@@ -121,19 +132,19 @@ def send_buttons(message_text, sender_id, buttons):
     if len(buttons) > 0 and len(buttons) <= 3:
         b = "button"
         data = {
-                "recipient": {
-                            "id": sender_id},
-                "message": {
-                            "attachment": {
-                                           "type": "template",
-                                           "payload": {
-                                                      "template_type": b,
-                                                      "text": message_text,
-                                                      "buttons": buttons
-                                                      }
-                                           }
-                             }
+            "recipient": {
+                "id": sender_id},
+            "message": {
+                "attachment": {
+                    "type": "template",
+                    "payload": {
+                            "template_type": b,
+                            "text": message_text,
+                            "buttons": buttons
+                    }
                 }
+            }
+        }
         punch_it(data)
     elif len(buttons) > 0 and len(buttons) <= 29:
         b = "generic"
@@ -141,33 +152,33 @@ def send_buttons(message_text, sender_id, buttons):
         # url = BASEURL + "logo"
         message_text = "Scroll right for more \n" + message_text
         elements = [
-                   {
-                    "title": "Friendly Sports Bot",
-#                     "image_url": url,
-                    "subtitle": message_text,
-                    "buttons": buttons[0:3]
-                    }
-                   ]
+            {
+                "title": "Friendly Sports Bot",
+                #                     "image_url": url,
+                "subtitle": message_text,
+                "buttons": buttons[0:3]
+            }
+        ]
         i = 3
         while i < len(buttons):
             elements.append({
-                    "title": "More options",
-                    "buttons": buttons[i:i+3]
-                    })
+                "title": "More options",
+                "buttons": buttons[i:i + 3]
+            })
             i += 3
         data = {
-                "recipient": {
-                             "id": sender_id},
-                "message": {
-                            "attachment": {
-                                           "type": "template",
-                                           "payload": {
-                                                      "template_type": b,
-                                                      "elements": elements
-                                                      }
-                                           }
-                             }
+            "recipient": {
+                "id": sender_id},
+            "message": {
+                "attachment": {
+                    "type": "template",
+                    "payload": {
+                            "template_type": b,
+                            "elements": elements
+                    }
                 }
+            }
+        }
         punch_it(data)
     else:
         # split into two messages
@@ -185,13 +196,13 @@ def send_quick_replies(message_text, sender_id, quick_replies):
     """
     # there is no point of breaking up quick replies
     data = {
-            "recipient": {
-                        "id": sender_id},
-            "message": {
-                        "text": message_text,
-                        "quick_replies": quick_replies
-                        }
-            }
+        "recipient": {
+            "id": sender_id},
+        "message": {
+            "text": message_text,
+            "quick_replies": quick_replies
+        }
+    }
     punch_it(data)
 
 
@@ -205,12 +216,12 @@ def send_message(message_text, sender_id, quick_replies=[], buttons=[]):
         buttons: list of buttons
     """
     data = {
-            "recipient": {
-                        "id": sender_id},
-            "message": {
-                        "text": message_text
-                        }
-            }
+        "recipient": {
+            "id": sender_id},
+        "message": {
+            "text": message_text
+        }
+    }
     if len(quick_replies) > 0:
         # send some quick replies
         send_quick_replies(message_text,
@@ -225,6 +236,108 @@ def send_message(message_text, sender_id, quick_replies=[], buttons=[]):
     typing_off(sender_id)
 
 
+def use_action_mapper(message_event):
+    """Respond to the message using the action mapper"""
+    try:
+        message = MESSENGER.parse_response(message_event)
+        print(message)
+        action_mapper = ActionMapper(DATABASE, PLATFORM, MESSENGER, message)
+        action_mapper.process(ACTION_MAP)
+    except Exception:
+        traceback.print_exc()
+
+
+def functional_response(message_event):
+    try:
+        if messaging_event.get("message"):
+            # someone sent us a message
+            # the facebook ID of the person sending you the message
+            sender_id = messaging_event["sender"]["id"]
+            # the recipient's ID, should be your page's facebook ID
+            recipient_id = messaging_event["recipient"]["id"]
+            # the message's text
+            if "text" in messaging_event['message'].keys():
+                message_text = messaging_event["message"]["text"]
+            else:
+                message_text = ""
+                parse_message(message_text, sender_id)
+            typing_on(sender_id)
+            (user, created) = get_user(sender_id, mongo)
+            if created or user["pid"] < 0:
+                log("Trying to figure you out")
+                log(user)
+                if user["state"] == PID:
+                    # see if can do it based upon name
+                    log("Matching name based upon facebook")
+                    determine_player(user, sender_id)
+                elif user["state"] == EMAIL:
+                    # see if they gave us an email
+                    log("Checking email")
+                    check_email(user, message_text, sender_id)
+                log(user)
+            else:
+                log(user)
+                payload = get_payload(messaging_event)
+                figure_out(user, message_text, payload, sender_id)
+                log(user)
+        if messaging_event.get("delivery"):
+            # delivery confirmation
+            pass
+        if messaging_event.get("optin"):
+            # optin confirmation
+            pass
+        if messaging_event.get("postback"):
+            # user clicked/tapped "postback"
+            # button in earlier message
+            sender_id = messaging_event["sender"]["id"]
+            # the recipient's ID, should be your page's facebook ID
+            recipient_id = messaging_event["recipient"]["id"]
+            # the message's text
+            pay = get_postback_payload(messaging_event)
+            if pay is not None:
+                (user, created) = get_user(sender_id, mongo)
+                log(user)
+                update_payload(user,
+                               pay,
+                               sender_id)
+                log(user)
+    except FacebookException as e:
+        log(str(e))
+        sender_id = messaging_event["sender"]["id"]
+        send_message(str(e), sender_id)
+    except NotCaptainException as e:
+        sender_id = messaging_event["sender"]["id"]
+        (user, created) = get_user(sender_id, mongo)
+        user['state'] = BASE
+        save_user(user, mongo)
+        log(str(e))
+        send_message(str(e), sender_id)
+    except PlatformException as e:
+        sender_id = messaging_event["sender"]["id"]
+        (user, created) = get_user(sender_id, mongo)
+        if user['pid'] > 0:
+            user['state'] = BASE
+            save_user(user, mongo)
+        else:
+            # dont know who this is
+            user['state'] = PID
+            save_user(user, mongo)
+        log(str(e))
+        send_message(str(e), sender_id)
+    except Exception as e:
+        traceback.print_exc()
+        sender_id = messaging_event["sender"]["id"]
+        log(str(e))
+        if user["pid"] > 0:
+            user['state'] = BASE
+            save_user(user, mongo)
+        else:
+            user['state'] = PID
+            save_user(user, mongo)
+        send_message("Something fucked up, let an admin know",
+                     sender_id)
+
+
 @app.route('/', methods=['POST'])
 def webhook():
     # endpoint for processing incoming messaging events
@@ -236,94 +349,8 @@ def webhook():
     if data["object"] == "page":
         for entry in data["entry"]:
             for messaging_event in entry["messaging"]:
-                try:
-                    if messaging_event.get("message"):
-                        # someone sent us a message
-                        # the facebook ID of the person sending you the message
-                        sender_id = messaging_event["sender"]["id"]
-                        # the recipient's ID, should be your page's facebook ID
-                        recipient_id = messaging_event["recipient"]["id"]
-                        # the message's text
-                        if "text" in messaging_event['message'].keys():
-                            message_text = messaging_event["message"]["text"]
-                        else:
-                            message_text = ""
-                            parse_message(message_text, sender_id)
-                        typing_on(sender_id)
-                        (user, created) = get_user(sender_id, mongo)
-                        if created or user["pid"] < 0:
-                            log("Trying to figure you out")
-                            log(user)
-                            if user["state"] == PID:
-                                # see if can do it based upon name
-                                log("Matching name based upon facebook")
-                                determine_player(user, sender_id)
-                            elif user["state"] == EMAIL:
-                                # see if they gave us an email
-                                log("Checking email")
-                                check_email(user, message_text, sender_id)
-                            log(user)
-                        else:
-                            log(user)
-                            payload = get_payload(messaging_event)
-                            figure_out(user, message_text, payload, sender_id)
-                            log(user)
-                    if messaging_event.get("delivery"):
-                        # delivery confirmation
-                        pass
-                    if messaging_event.get("optin"):
-                        # optin confirmation
-                        pass
-                    if messaging_event.get("postback"):
-                        # user clicked/tapped "postback"
-                        # button in earlier message
-                        sender_id = messaging_event["sender"]["id"]
-                        # the recipient's ID, should be your page's facebook ID
-                        recipient_id = messaging_event["recipient"]["id"]
-                        # the message's text
-                        pay = get_postback_payload(messaging_event)
-                        if pay is not None:
-                            (user, created) = get_user(sender_id, mongo)
-                            log(user)
-                            update_payload(user,
-                                           pay,
-                                           sender_id)
-                            log(user)
-                except FacebookException as e:
-                    log(str(e))
-                    sender_id = messaging_event["sender"]["id"]
-                    send_message(str(e), sender_id)
-                except NotCaptainException as e:
-                    sender_id = messaging_event["sender"]["id"]
-                    (user, created) = get_user(sender_id, mongo)
-                    user['state'] = BASE
-                    save_user(user, mongo)
-                    log(str(e))
-                    send_message(str(e), sender_id)
-                except PlatformException as e:
-                    sender_id = messaging_event["sender"]["id"]
-                    (user, created) = get_user(sender_id, mongo)
-                    if user['pid'] > 0:
-                        user['state'] = BASE
-                        save_user(user, mongo)
-                    else:
-                        # dont know who this is
-                        user['state'] = PID
-                        save_user(user, mongo)
-                    log(str(e))
-                    send_message(str(e), sender_id)
-                except Exception as e:
-                    traceback.print_exc()
-                    sender_id = messaging_event["sender"]["id"]
-                    log(str(e))
-                    if user["pid"] > 0:
-                        user['state'] = BASE
-                        save_user(user, mongo)
-                    else:
-                        user['state'] = PID
-                        save_user(user, mongo)
-                    send_message("Something fucked up, let an admin know",
-                                 sender_id)
+                use_action_mapper(messaging_event)
+
     return "ok", 200
 
 
@@ -463,7 +490,7 @@ def display_ss(user, sender_id, callback=send_message):
     options = []
     for player_id, player in user['teamroster'].items():
         if (player['gender'].lower() == "f" and
-            player['player_id'] not in user['game']['ss']):
+                player['player_id'] not in user['game']['ss']):
             options.append({"type": "postback",
                             "title": player['player_name'],
                             "payload": player['player_id']})
@@ -813,7 +840,7 @@ def figure_out(user, message_text, payload, sender_id, callback=send_message):
                 payload = ""
             options = (message_text.lower(), payload.lower())
             if (UPCOMING.lower() in options or
-                UPCOMING_TITLE.lower() in options):
+                    UPCOMING_TITLE.lower() in options):
                 update_payload(user, UPCOMING, sender_id, callback=callback)
             elif (LEADERS.lower() in options or
                   LEAGUE_LEADERS_TITLE.lower() in options):
