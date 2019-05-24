@@ -33,15 +33,19 @@ class MessengerStub():
             self.user = user
         else:
             raise TestDoubleException("Illegal mock user")
-        self.message = None
+        self.messages = []
 
     def send_message(self, message):
         """Just store the message so can view it for testing"""
-        self.message = message
+        self.messages.append(message)
 
-    def get_message(self):
-        """Get the message back later"""
-        return self.message
+    def get_messages(self):
+        """Returns the list of messages sent"""
+        return self.messages
+
+    def clear_messages(self):
+        """Clears all the messages sent"""
+        self.messages = []
 
     def parse_response(self, response):
         """Do not think this will be needed for testing"""
@@ -63,17 +67,15 @@ class MessengerStub():
         """Return the mock user object"""
         return self.user
 
-    def get_convenor_email_list(self):
-        return
-
 
 class PlatformStub():
     """Stub the platform calls"""
 
-    def __init__(self, player_by_email=None, player_by_name=None):
+    def __init__(self, player_by_email=None, player_by_name=None, teams=[]):
         """Constructor"""
         self.player_by_email = player_by_email
         self.player_by_name = player_by_name
+        self.teams = teams
 
     def set_mock_player(self, player_by_email=None, player_by_name=None):
         """Set the mock player the platform should return upon lookups"""
@@ -81,6 +83,10 @@ class PlatformStub():
             self.player_by_email = player_by_email
         if player_by_name is not None:
             self.player_by_name = player_by_name
+
+    def set_mock_teams(self, teams=[]):
+        """Sets the mock teams to return"""
+        self.teams = teams
 
     def lookup_player_by_name(self, name):
         """Mock method that just returns mock player"""
@@ -92,16 +98,28 @@ class PlatformStub():
             raise IdentityException("Not sure who you are, ask admin")
         return self.player_by_email
 
+    def lookup_all_teams(self):
+        """Mock method that just returns mock team list"""
+        team_dict = {}
+        for team in self.teams:
+            team_dict[team["team_id"]] = {}
+        return team_dict
+
+    def lookup_teams_player_associated_with(self, player):
+        """Mock method that just returns mock team list"""
+        return self.teams
+
 
 class MongoStub():
     """Class that stubs mongo for testing database interaction"""
 
-    def __init__(self, player=None, already_in_league=False):
+    def __init__(self, player=None, already_in_league=False, convenors=[]):
         """Constructor"""
         self.created_player = None
         self.player = player
         self.saved_player = None
         self._already_in_league = already_in_league
+        self.convenors = []
 
     def save_player(self, player):
         """Stub for the save player"""
@@ -112,7 +130,7 @@ class MongoStub():
         return self.saved_player
 
     def set_player(self, player):
-        """Helper for set the player to return"""
+        """Helper to set the player to that will be returned"""
         self.player = player
 
     def get_player(self, messenger_id):
@@ -131,3 +149,11 @@ class MongoStub():
         self.created_player = Player(messenger_id=sender_id,
                                      name=name)
         return self.created_player
+
+    def set_convenors(self, convenors):
+        """Sets the mock of the convenors"""
+        self.convenors = convenors
+
+    def get_convenor_email_list(self):
+        """Returns a list of mocked convenors"""
+        return self.convenors
