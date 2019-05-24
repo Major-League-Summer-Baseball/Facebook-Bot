@@ -24,6 +24,7 @@ class WelcomeAction(ActionInterface):
 
         # determine if they are a convenor
         if self.is_player_convenor(player):
+            LOGGER.debug("Welcoming a convenor (this is a big deal)")
             m1 = Message(messenger_id,
                          message=ACKNOWLEDGE_CONVENOR,
                          recipient_id=recipient_id)
