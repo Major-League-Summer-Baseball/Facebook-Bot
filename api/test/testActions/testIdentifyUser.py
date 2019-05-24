@@ -3,7 +3,7 @@
 @author: 2019-04-29
 @organization: MLSB
 @project: Facebook Bot
-@summary: Test helper functions
+@summary: Test Identify User Action
 '''
 from api.test.testDoubles import NoAction
 from api.messenger.user import User
@@ -60,7 +60,7 @@ class TestIdentifyUser(TestActionBase):
                          'messenger_name'])
 
         # make sure the message sent back makes sense
-        message = self.messenger.get_message()
+        message = self.messenger.get_messages()[0]
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
         self.assertEqual(ASK_FOR_EMAIL, message.get_message())
@@ -110,7 +110,7 @@ class TestIdentifyUser(TestActionBase):
         self.assertEqual(save_player.get_player_info(), test_player_info)
 
         # make sure the message sent back makes sense
-        message = self.messenger.get_message()
+        message = self.messenger.get_messages()[0]
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
         self.assertEqual(WELCOME_LEAGUE.format(test_sender_name),
@@ -161,7 +161,7 @@ class TestIdentifyUser(TestActionBase):
         self.assertEqual(save_player.get_player_info(), test_player_info)
 
         # make sure the message sent back makes sense
-        message = self.messenger.get_message()
+        message = self.messenger.get_messages()[0]
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
         self.assertEqual(WELCOME_LEAGUE.format(test_sender_name),
@@ -210,7 +210,7 @@ class TestIdentifyUser(TestActionBase):
                          'messenger_name'])
 
         # make sure the message sent back makes sense
-        message = self.messenger.get_message()
+        message = self.messenger.get_messages()[0]
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
         self.assertEqual(ASK_FOR_EMAIL, message.get_message())
@@ -271,7 +271,7 @@ class TestIdentifyUser(TestActionBase):
                          'messenger_name'])
 
         # make sure the message sent back makes sense
-        message = self.messenger.get_message()
+        message = self.messenger.get_messages()[0]
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
         self.assertEqual(IMPOSTER, message.get_message())
@@ -329,7 +329,7 @@ class TestIdentifyUser(TestActionBase):
                          'messenger_name'])
 
         # make sure the message sent back makes sense
-        message = self.messenger.get_message()
+        message = self.messenger.get_messages()[-1]
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
         self.assertEqual(LOCKED_OUT, message.get_message())
@@ -388,7 +388,7 @@ class TestIdentifyUser(TestActionBase):
                          'messenger_name'])
 
         # make sure the message sent back makes sense
-        message = self.messenger.get_message()
+        message = self.messenger.get_messages()[0]
         expected_message = WELCOME_LEAGUE.format(test_sender_name)
         self.assertEqual(test_sender_id, message.get_sender_id())
         self.assertEqual(None, message.get_payload())
