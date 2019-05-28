@@ -139,7 +139,7 @@ class Player():
             message = "Incorrect type: expecting Subscriptions"
             raise SubscriptionException(message)
 
-    def is_captain(self, team_id):
+    def is_captain(self):
         """Returns whether the given player is a captain"""
         return self._convenor or len(self._teams_that_captain) > 0
 
