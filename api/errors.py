@@ -22,6 +22,10 @@ class FacebookException(Exception):
     pass
 
 
+class MessengerException(Exception):
+    pass
+
+
 class IdentityException(Exception):
     pass
 
