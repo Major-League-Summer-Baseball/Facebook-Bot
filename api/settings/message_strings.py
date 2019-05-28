@@ -19,3 +19,12 @@ ACKNOWLEDGE_CAPTAIN = ("Sounds like you the captain of the team\n" +
                        "you will be able to submit scores for your team")
 PART_OF_TEAM = ("It appears you are on: {}\n" +
                 "you are now subscribed to the team and will get updates")
+
+# main menu titles
+MAIN_MENU_UPCOMING_GAMES_TITLE = "Upcoming Games"
+MAIN_MENU_LEAGUE_LEADERS_TITLE = "League Leaders"
+MAIN_MENU_EVENTS_TITLE = "Events"
+MAIN_MENU_FUN_TITLE = "Fun Meter"
+MAIN_MENU_SUBMIT_SCORE_TITLE = "Submit Score"
+MAIN_MENU_HR_TITLE = "HR Leaders"
+MAIN_MENU_SS_TITLE = "SS Leaders"
