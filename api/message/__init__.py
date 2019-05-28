@@ -6,7 +6,7 @@
 @summary: Holds information and the message received by some sender
     Additionally holds some objects that are formatted upon sending a message
 '''
-from api.errors import OptionException
+from api.errors import OptionException, MessengerException
 
 
 class FormattedData():
@@ -55,6 +55,14 @@ class LeagueLeader(FormattedData):
                                       self._data['hits'])
 
 
+class NormalStringData(FormattedData):
+    """Normal String representation of the data"""
+
+    def format(self):
+        """Returns a formatted string representation of the data"""
+        return str(self._data)
+
+
 class Option():
     """
         Holds information about an option (payload, buttons, quick replies)
@@ -77,6 +85,42 @@ class Option():
     def get_title(self):
         """Returns the title of the option (str)"""
         return self._title
+
+
+class Payload():
+    QUICK_REPLY_TYPE = "text"
+    BUTTON_TYPE = "postback"
+
+    def __init__(self, payload_type=None, options=[]):
+        """Constructor"""
+        if payload_type is not None:
+            self._type = payload_type
+            if not self.is_button_reply() and not self.is_quick_reply():
+                raise MessengerException("Unsupported payload type")
+        else:
+            self._type = Payload.BUTTON_TYPE
+        self._options = options
+
+    def add_option(self, option):
+        """Adds the given Option"""
+        self._options.append(option)
+
+    def is_quick_reply(self):
+        """Is the payload a quick reply"""
+        return self._type == Payload.QUICK_REPLY_TYPE
+
+    def is_button_reply(self):
+        """Is the payload a button reply"""
+        return self._type == Payload.BUTTON_TYPE
+
+    def get_payload_response(self):
+        """Returns an array of payload responses"""
+        payload = []
+        for option in self._options:
+            payload.append({"type": self._type,
+                            "title": option.get_title(),
+                            "payload": option.get_data().format()})
+        return payload
 
 
 class Message():
