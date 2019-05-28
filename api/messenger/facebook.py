@@ -1,47 +1,19 @@
+'''
+@author: Dallas Fraser
+@author: 2019-08-27
+@organization: MLSB
+@project: Facebook Bot
+@summary: The facebook messenger implementation
+'''
 import json
 import requests
 from api.logging import LOGGER
 from api.message import Message
 from api.messenger import Messenger
-from api.errors import FacebookException
+from api.errors import MessengerException
 from api.messenger.user import User
 from api.variables import NO_OPTIONS_AVAILABLE, SCROLL_FOR_MORE_OPTIONS,\
     EVEN_MORE_OPTIONS, PAGE_ACCESS_TOKEN
-
-
-class FacebookPayload():
-    QUICK_REPLY_TYPE = "text"
-    BUTTON_TYPE = "postback"
-
-    def __init__(self, payload_type=None, options=[]):
-        """Constructor"""
-        if payload_type is not None:
-            self._type = payload_type
-            if not self.is_button_reply() and not self.is_quick_reply():
-                raise FacebookException("Unsupported payload type")
-        else:
-            self._type = FacebookPayload.BUTTON_TYPE
-        self._options = options
-
-    def add_option(self, option):
-        """Adds the given Option"""
-        self._options.append(option)
-
-    def is_quick_reply(self):
-        """Is the payload a quick reply"""
-        return self._type == FacebookPayload.QUICK_REPLY_TYPE
-
-    def is_button_reply(self):
-        """Is the payload a button reply"""
-        return self._type == FacebookPayload.BUTTON_TYPE
-
-    def get_payload_response(self):
-        """Returns an array of payload responses"""
-        payload = []
-        for option in self._options:
-            payload.append({"type": self.type,
-                            "title": option.get_title(),
-                            "payload": option.get_data().format()})
 
 
 class FacebookMessenger(Messenger):
@@ -73,7 +45,7 @@ class FacebookMessenger(Messenger):
         if request_response.status_code != 200:
             LOGGER.critical("Facebook services not available")
             LOGGER.critical(str(request_response.json()))
-            raise FacebookException("Facebook services not available")
+            raise MessengerException("Facebook services not available")
         data = request_response.json()
         LOGGER.debug("Data from looking up user" + str(data))
         # now we know the person's facebook name
@@ -96,11 +68,11 @@ class FacebookMessenger(Messenger):
         """
         if message.get_sender_id() is None:
             LOGGER.error("Trying to send message to None")
-            raise FacebookException("Sending message to unknown person")
+            raise MessengerException("Sending message to unknown person")
         if message.get_payload() is None and message.get_message() is not None:
             self._send_message(message.get_message(), message.get_sender_id())
         if message.get_payload() is not None:
-            self._send_payload(message.get_message())
+            self._send_payload(message)
 
     def parse_response(self, response):
         """Parse the message from the response given by the messenger.
@@ -129,7 +101,7 @@ class FacebookMessenger(Messenger):
         else:
             LOGGER.error("Unable to get sender id")
             LOGGER.error(str(response))
-            raise FacebookException("Unable to get sender id")
+            raise MessengerException("Unable to get sender id")
         if response.get("recipient"):
             recipient_id = response["recipient"]["id"]
         return Message(sender_id,
@@ -186,7 +158,8 @@ class FacebookMessenger(Messenger):
             self._send_data(data)
         elif len(buttons) <= 29:
             self._send_buttons_aux(message.get_sender_id(),
-                                   message.get_message())
+                                   message.get_message(),
+                                   buttons)
         else:
             # split into two messages
             m1 = Message(message.get_sender_id(),
@@ -197,8 +170,10 @@ class FacebookMessenger(Messenger):
             self._send_buttons(m2)
 
     def _send_buttons_aux(self, sender_id, message, buttons):
-        message_text = (SCROLL_FOR_MORE_OPTIONS +
-                        " \n " + message.get_message())
+
+        message_text = SCROLL_FOR_MORE_OPTIONS
+        if message is not None:
+            message_text += " \n " + message.get_message()
         elements = [
             {"title": "Friendly Sports Bot",
              "subtitle": message_text,
@@ -239,4 +214,4 @@ class FacebookMessenger(Messenger):
         if request_response.status_code != 200:
             LOGGER.critical("Unable to send response using Facebook")
             LOGGER.error(str(request_response.json()))
-            raise FacebookException("Unable to send reponse")
+            raise MessengerException("Unable to send reponse")
