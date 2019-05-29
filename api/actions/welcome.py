@@ -15,8 +15,22 @@ from api.actions import ActionInterface, ActionState
 
 
 class WelcomeAction(ActionInterface):
+    """
+        Welcome the user to the league, find out what teams they are on and
+        subscribe them. Also, determine if they are captain or convenor.
+    """
 
     def process(self, action_map):
+        """
+            The main entry point
+
+            Notes:
+                Use the player email to check whether they are convenor
+                    assuming web master will update this
+                Check if they are a captain
+                Otherwise just subscribe them to their teams
+        """
+
         self.action_map = action_map
         messenger_id = self.message.get_sender_id()
         recipient_id = self.message.get_recipient_id()
@@ -89,14 +103,4 @@ class WelcomeAction(ActionInterface):
         """The method called when welcome action was successfully completed"""
         LOGGER.info("Welcomed player: " + str(player))
 
-        # update the player for the next action
-        player.set_action_state(ActionState(key=HOME_KEY))
-
-        self.database.save_player(player)
-
-        # proceed to complete next action
-        next_action = self.action_map[HOME_KEY]
-        return next_action(self.database,
-                           self.platform,
-                           self.messenger,
-                           self.message).process(self.action_map)
+        return self.initiate_action(self.action_map, HOME_KEY, player)
