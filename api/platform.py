@@ -6,6 +6,7 @@
 @summary: Holds an implementation of the interaction with the MLSB platform
 '''
 import requests
+from datetime import date
 from api.helper import get_this_year
 from api.logging import LOGGER
 from api.errors import PlatformException,\
@@ -115,3 +116,42 @@ class PlatformService():
             LOGGER.critical("Unable to contact the MLSB platform")
             raise PlatformException(PLATFORMMESSAGE)
         return response.json()
+
+    def get_events(self):
+        """Returns a dictionary object of the events
+        """
+        r = requests.get(self.baseurl +
+                         "website/event/{}/json".format(date.today().year))
+        if (r.status_code != 200):
+            raise PlatformException(PLATFORMMESSAGE)
+        return r.json()
+
+    def league_leaders(self, stat):
+        """Returns league leaders for some stat
+
+        Parameters:
+            stat: the stat classification (string)
+        Returns:
+            r.json(): a list of leaders
+        """
+        params = {"stat": stat, "year": date.today().year}
+        r = requests.post(self.baseurl + "api/view/league_leaders",
+                          data=params,
+                          headers=self.headers)
+        if (r.status_code != 200):
+            raise PlatformException(PLATFORMMESSAGE)
+        return r.json()
+
+    def fun_meter(self):
+        """Returns the amount of fun
+
+        Returns:
+            fun: an amount of fun (int)
+        """
+        params = {"year": date.today().year}
+        r = requests.post(self.baseurl + "api/view/fun",
+                          data=params,
+                          headers=self.headers)
+        if (r.status_code != 200):
+            raise PlatformException(PLATFORMMESSAGE)
+        return r.json()
