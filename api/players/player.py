@@ -139,10 +139,6 @@ class Player():
             message = "Incorrect type: expecting Subscriptions"
             raise SubscriptionException(message)
 
-    def is_captain(self):
-        """Returns whether the given player is a captain"""
-        return self._convenor or len(self._teams_that_captain) > 0
-
     def is_convenor(self):
         """Returns whether the given player is a convenor"""
         return self._convenor
@@ -190,6 +186,17 @@ class Player():
             self._teams_that_captain.remove(team["team_id"])
         except ValueError:
             pass
+
+    def is_captain(self, team_id=None):
+        """Returns whether the given player is a captain
+
+            Parameters:
+                team_id: if given then checks if player captain of given team
+        """
+        if team_id is None:
+            return self._convenor or len(self._teams_that_captain) > 0
+        else:
+            return self._convenor or team_id in self._teams_that_captain
 
     def __str__(self):
         return "{} - {}".format(self._messenger_name, self._messenger_id)
