@@ -16,13 +16,24 @@ from api.errors import IdentityException
 
 
 class IdentifyUser(ActionInterface):
+    """
+        Action used to identify a given messenger user to a player in league
+    """
     EMAIL_STATE = "Asking for email"
     UNKNOWN_STATE = "Cannot find the user, user should consult convenors"
     IMPOSTER_STATE = "Trying to steal someone's else email"
     LOCKED_OUT_STATE = " Locked out for trying 3 different emails"
 
     def process(self, action_map):
-        """Process the facebook id"""
+        """
+            The main entry point
+
+            Notes:
+                First use information given by the messenger to lookup player.
+                Second if not found ask them for their email
+                    and use the given email to lookup player.
+                Lock out user if guess too many emails.
+        """
         self.action_map = action_map
         messenger_id = self.message.get_sender_id()
         player = self.database.get_player(messenger_id)
@@ -45,10 +56,18 @@ class IdentifyUser(ActionInterface):
         elif player.get_action_state().get_state() == IdentifyUser.EMAIL_STATE:
             # try figuring out who they are by their email
             self.check_email(player)
-
-        # all other states we just ignore them
+        else:
+            # all other states we just ignore them
+            pass
 
     def determine_player(self, messenger_user):
+        """
+            Determine the player given a messenger user
+
+            Notes:
+                if messenger gave email then use that
+                otherwise just use the player's name as a lookup
+        """
         try:
             email = messenger_user.get_email()
             if email is not None:
@@ -139,14 +158,7 @@ class IdentifyUser(ActionInterface):
                           message=WELCOME_LEAGUE.format(player.get_name()))
         self.messenger.send_message(message)
 
-        # update the player for the next action
-        player.set_action_state(ActionState(key=WELCOME_KEY))
         player.set_player_info(player_info)
         self.database.save_player(player)
 
-        # proceed to complete next action
-        next_action = self.action_map[WELCOME_KEY]
-        return next_action(self.database,
-                           self.platform,
-                           self.messenger,
-                           self.message).process(self.action_map)
+        return self.initiate_action(self.action_map, WELCOME_KEY, player)
