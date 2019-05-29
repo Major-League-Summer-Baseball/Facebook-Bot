@@ -18,7 +18,7 @@ class TestPlayer(unittest.TestCase):
         """Test the empty constructor"""
         player = Player()
         self.assertFalse(player.is_convenor())
-        self.assertFalse(player.is_captain(1))
+        self.assertFalse(player.is_captain(team_id=1))
 
         # test able to produce dictionary
         player.to_dictionary()

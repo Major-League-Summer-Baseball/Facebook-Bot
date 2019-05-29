@@ -120,7 +120,7 @@ class TestWelcome(TestActionBase):
         player = self.db.inspect_saved_player()
         self.assertTrue(player.get_subscriptions(
         ).is_subscribed_to_team(test_team_id))
-        self.assertTrue(player.is_captain(test_team_id))
+        self.assertTrue(player.is_captain(team_id=test_team_id))
 
         # but not subscribed to team from last year
         self.assertFalse(player.get_subscriptions(
