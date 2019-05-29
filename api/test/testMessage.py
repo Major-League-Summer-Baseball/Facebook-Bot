@@ -5,7 +5,7 @@
 @project: Facebook Bot
 @summary: Test message package
 '''
-from api.message import Option, Message, FormattedData, Event
+from api.message import Option, Message, DataFormatter, EventFormatter
 from api.errors import OptionException
 import unittest
 
@@ -24,10 +24,10 @@ class TestMessageAndOption(unittest.TestCase):
             self.assertTrue(False, "Expecting OptionException")
         except OptionException:
             pass
-        option = Option("title", FormattedData("data"))
+        option = Option("title", DataFormatter("data"))
         self.assertEqual(str(option.get_data()), "data")
         self.assertEqual(option.get_title(), "title")
-        option = Option("title", Event("data"))
+        option = Option("title", EventFormatter("data"))
         self.assertEqual(str(option.get_data()), "data")
         self.assertEqual(option.get_title(), "title")
 
