@@ -92,3 +92,14 @@ class ActionInterface():
             action_map: maps action ids to their classes
         """
         raise NotImplementedError("Action needs to implement process method")
+
+    def initiate_action(self, action_map, next_action_key, player):
+        """Initiate the action for the given key and update the player state"""
+        player.set_action_state(ActionState(key=next_action_key))
+        self.database.save_player(player)
+
+        next_action = action_map[next_action_key]
+        return next_action(self.database,
+                           self.platform,
+                           self.messenger,
+                           self.message).process(action_map)
