@@ -9,8 +9,10 @@
 from api.errors import OptionException, MessengerException
 
 
-class FormattedData():
-    """Formatted data"""
+class DataFormatter():
+    """
+        The data formatter interface
+    """
 
     def __init__(self, data):
         """Constructor"""
@@ -24,8 +26,10 @@ class FormattedData():
         return str(self._data)
 
 
-class Event(FormattedData):
-    """Event data"""
+class EventFormatter(DataFormatter):
+    """
+        Formatter used for events json
+    """
 
     def format(self):
         """Returns a formatted string of the event"""
@@ -33,8 +37,10 @@ class Event(FormattedData):
                                 self._data['date'])
 
 
-class Game(FormattedData):
-    """Game data"""
+class GameFormatter(DataFormatter):
+    """
+        Formatter used for game json
+    """
 
     def format(self):
         """Returns a formatted string representation of the game"""
@@ -45,8 +51,10 @@ class Game(FormattedData):
                                                 self._data['field'])
 
 
-class LeagueLeader(FormattedData):
-    """League leader data"""
+class LeagueLeaderFormatter(DataFormatter):
+    """
+        Formatter used for league leader json
+    """
 
     def format(self):
         """Returns a formatted string representation of the league leader"""
@@ -55,8 +63,10 @@ class LeagueLeader(FormattedData):
                                       self._data['hits'])
 
 
-class NormalStringData(FormattedData):
-    """Normal String representation of the data"""
+class StringFormatter(DataFormatter):
+    """
+        Formatter used for a normal string
+    """
 
     def format(self):
         """Returns a formatted string representation of the data"""
@@ -73,7 +83,7 @@ class Option():
     def __init__(self, title, data):
         """Constructor"""
         self._title = title
-        if isinstance(data, FormattedData):
+        if isinstance(data, DataFormatter):
             self._data = data
         else:
             raise OptionException("Given non-formatted data")
@@ -88,6 +98,9 @@ class Option():
 
 
 class Payload():
+    """
+        A message payload - used for quick replies and buttons
+    """
     QUICK_REPLY_TYPE = "text"
     BUTTON_TYPE = "postback"
 
