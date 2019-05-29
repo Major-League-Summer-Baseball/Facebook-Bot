@@ -5,9 +5,12 @@
 @project: Facebook Bot
 @summary: Holds basic function that are helpful across packages
 '''
-import sys
+from api.settings.message_strings import SASSY_COMMENT, FUN_COMMENT, EMOJI,\
+    COMPLIMENT, INTROS
 from json import loads as loader
 from datetime import datetime
+from random import randint
+import sys
 
 
 def parse_out_email(message_string):
@@ -55,6 +58,36 @@ def parse_number(text):
 def get_this_year():
     """Return the current year"""
     return datetime.now().year
+
+
+def random_fun_comment():
+    """Returns a random fun comment
+    """
+    return FUN_COMMENT[randint(0, len(FUN_COMMENT) - 1)]
+
+
+def random_emoji():
+    """Returns a random emoji
+    """
+    return EMOJI[randint(0, len(EMOJI) - 1)]
+
+
+def random_intro():
+    """Returns a random intro
+    """
+    return INTROS[randint(0, len(INTROS) - 1)]
+
+
+def random_sass():
+    """Returns a random sassy comment
+    """
+    return SASSY_COMMENT[randint(0, len(SASSY_COMMENT) - 1)]
+
+
+def random_compliment():
+    """Returns a random compliment
+    """
+    return COMPLIMENT[randint(0, len(COMPLIMENT) - 1)]
 
 
 def loads(data):
