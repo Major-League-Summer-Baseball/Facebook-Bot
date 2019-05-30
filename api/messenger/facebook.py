@@ -8,7 +8,7 @@
 import json
 import requests
 from api.logging import LOGGER
-from api.message import Message
+from api.message import Message, Payload, Option, StringFormatter
 from api.messenger import Messenger
 from api.errors import MessengerException
 from api.messenger.user import User
@@ -87,14 +87,19 @@ class FacebookMessenger(Messenger):
         if response.get("postback"):
             if "postback" in response.keys():
                 if "payload" in response["postback"]:
-                    payload = response["postback"]["payload"]
+                    temp = response["postback"]
+                    data = StringFormatter(temp.get("payload", None))
+                    option = Option(temp.get("title", None), data)
+                    payload = Payload(payload_type=Payload.BUTTON_TYPE,
+                                      options=[option])
         elif response.get("message"):
             if "message" in response.keys():
                 if "text" in response["message"].keys():
                     message_text = response["message"]["text"]
                 if "quick_reply" in response["message"].keys():
                     if "payload" in response["message"]["quick_reply"].keys():
-                        payload = response['message']['quick_reply']['payload']
+                        quick_reply = response['message']['quick_reply']
+                        message_text = quick_reply['payload']
         sender_id = None
         if response.get("sender"):
             sender_id = response["sender"]["id"]
@@ -144,15 +149,15 @@ class FacebookMessenger(Messenger):
                                " \n " + NO_OPTIONS_AVAILABLE)
         elif len(buttons) <= 3:
             data = {"recipient": {
-                    "id": message.get_sender_id()},
-                    "message": {
-                        "attachment": {
-                            "type": "template",
+                "id": message.get_sender_id()},
+                "message": {
+                "attachment": {
+                    "type": "template",
                             "payload": {
                                 "template_type": "button",
                                 "text": message.get_message(),
                                 "buttons": buttons}
-                        }
+                }
             }
             }
             self._send_data(data)
@@ -187,13 +192,13 @@ class FacebookMessenger(Messenger):
             i += 3
         data = {"recipient": {"id": sender_id},
                 "message": {
-                    "attachment": {
-                        "type": "template",
+            "attachment": {
+                "type": "template",
                         "payload": {
                             "template_type": "generic",
                             "elements": elements
                         }
-                    }
+            }
         }
         }
         self._send_data(data)
