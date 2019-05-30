@@ -13,7 +13,8 @@ from api.settings.message_strings import MAIN_MENU_EVENTS_TITLE,\
     MAIN_MENU_FUN_TITLE, MAIN_MENU_HR_TITLE, MAIN_MENU_SS_TITLE,\
     MAIN_MENU_UPCOMING_GAMES_TITLE, MAIN_MENU_LEAGUE_LEADERS_TITLE,\
     MAIN_MENU_SUBMIT_SCORE_TITLE, HR_TITLE, SS_TITLE, FUN_TOTAL_COMMENT,\
-    NOGAMES_COMMENT, NOT_CAPTAIN_COMMENT
+    NOGAMES_COMMENT, NOT_CAPTAIN_COMMENT, NO_UPCOMING_GAMES_COMMENT
+from api.settings.action_keys import SUBMIT_SCORE_KEY
 from api.actions import ActionInterface, ActionState
 
 
@@ -41,32 +42,73 @@ class HomescreenAction(ActionInterface):
         player = self.database.get_player(messenger_id)
 
         # if they sent a message try to process it
+        action_taken = False
+        print(str(self.message.get_message()) +
+              " " + str(self.message.get_payload()))
         if self.message.get_message() is not None:
-            pass
+            result = self.parse_message(self.message.get_message(),
+                                        self.message.get_sender_id(),
+                                        self.message.get_recipient_id(),
+                                        player)
+            action_taken = action_taken or result
 
         # if they sent a payload try to process it
         if self.message.get_payload() is not None:
-            pass
+            for option in self.message.get_payload().get_options():
+                result = self.parse_message(option.get_data().format(),
+                                            self.message.get_sender_id(),
+                                            self.message.get_recipient_id(),
+                                            player)
+                action_taken = action_taken or result
+        LOGGER.debug("Action taken on home screen: {}".format(action_taken))
+        if not action_taken:
+            self.display_base_options(player)
 
-        self.display_base_options(player)
+    def parse_message(self, message_string, sender_id, recipient_id, player):
+        """Parses the message and performs an action if needed
 
-    def parse_message(self, message, player):
-        if HomescreenAction.UPCOMING_GAMES_PAYLOAD.format() == message:
+            Parameters:
+                message_string: the message received
+                    either message or payload value (Str)
+                sender_id: the id of the sender (Str)
+                recipient_id: the id of the recipient (Str)
+                player: the player associated with the sender (Player)
+            Returns:
+                None if no action was taken
+                true if some action was taken
+        """
+        action_taken = True
+        message_string = message_string.lower()
+        if (message_string in
+            [HomescreenAction.UPCOMING_GAMES_PAYLOAD.format().lower(),
+             MAIN_MENU_UPCOMING_GAMES_TITLE.lower()]):
             self.display_upcoming_games(player)
-        elif HomescreenAction.LEAGUE_LEADERS_PAYLOAD.format() == message:
+        elif (message_string in
+              [HomescreenAction.LEAGUE_LEADERS_PAYLOAD.format().lower(),
+               MAIN_MENU_LEAGUE_LEADERS_TITLE.lower()]):
             self.display_league_leaders()
-        elif HomescreenAction.EVENTS_PAYLOAD.format() == message:
+        elif (message_string in
+              [HomescreenAction.EVENTS_PAYLOAD.format().lower(),
+               MAIN_MENU_EVENTS_TITLE.lower()]):
             self.display_events()
-        elif HomescreenAction.FUN_PAYLOAD.format() == message:
+        elif (message_string in
+              [HomescreenAction.FUN_PAYLOAD.format().lower(),
+               MAIN_MENU_FUN_TITLE.lower()]):
             self.display_fun_meter()
-        elif HomescreenAction.SUBMIT_SCORE_PAYLOAD.format() == message:
+        elif (message_string in
+              [HomescreenAction.SUBMIT_SCORE_PAYLOAD.format().lower(),
+               MAIN_MENU_FUN_TITLE.lower()]):
             if player.is_captain():
-                self.intiate_action()
+                self.intiate_action(self.action_map,
+                                    SUBMIT_SCORE_KEY, player)
             else:
-                message = Message(self.message.get_sender_id(),
-                                  recipient_id=self.message.get_recipient_id(),
+                message = Message(sender_id,
+                                  recipient_id=recipient_id,
                                   message=NOT_CAPTAIN_COMMENT)
                 self.messenger.send_message(message)
+        else:
+            action_taken = False
+        return action_taken
 
     def display_base_options(self, player):
         """Display the base options"""
@@ -117,19 +159,20 @@ class HomescreenAction(ActionInterface):
 
     def display_upcoming_games(self, player):
         """Display the upcoming games for the user"""
-        games = self.platform.get_upcoming_games()
+        games = self.platform.get_upcoming_games(player)
         game_entries = []
         for game in games:
             game_entries.append(GameFormatter(game).format())
-        if (len(game_entries) > 0):
+        if len(games) == 0:
             message = Message(self.message.get_sender_id(),
                               recipient_id=self.message.get_recipient_id(),
-                              message="\n".join(game_entries))
+                              message=NO_UPCOMING_GAMES_COMMENT)
+            self.messenger.send_message(message)
         else:
             message = Message(self.message.get_sender_id(),
                               recipient_id=self.message.get_recipient_id(),
-                              message=NOGAMES_COMMENT)
-        self.messenger.send_message(message)
+                              message="\n\n".join(game_entries))
+            self.messenger.send_message(message)
 
     def display_league_leaders(self):
         """Display the league leaders"""
@@ -145,7 +188,7 @@ class HomescreenAction(ActionInterface):
             hr_leaders_message.append(LeagueLeaderFormatter(leader).format())
         for leader in ss_leaders:
             ss_leaders_message.append(LeagueLeaderFormatter(leader).format())
-
+        LOGGER.debug(str(hr_leaders) + " and " + str(ss_leaders))
         # create a message for each type of leader and send both of them
         m1 = Message(self.message.get_sender_id(),
                      recipient_id=self.message.get_recipient_id(),
@@ -171,23 +214,3 @@ class HomescreenAction(ActionInterface):
                     recipient_id=self.message.get_recipient_id(),
                     message=message)
         self.messenger.send_message(m)
-
-    def initiate_action(self, player, action_key):
-        """Change from homescreen to the given action
-
-        Parameteres:
-            action_key: the key of the action to initiate
-        """
-        LOGGER.info("Initiating action {} from homescreen".format(action_key))
-
-        # update the player for the next action
-        player.set_action_state(ActionState(key=action_key))
-
-        self.database.save_player(player)
-
-        # proceed to complete next action
-        next_action = self.action_map[action_key]
-        return next_action(self.database,
-                           self.platform,
-                           self.messenger,
-                           self.message).process(self.action_map)
