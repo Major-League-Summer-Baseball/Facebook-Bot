@@ -7,6 +7,7 @@
     Additionally holds some objects that are formatted upon sending a message
 '''
 from api.errors import OptionException, MessengerException
+from copy import deepcopy
 
 
 class DataFormatter():
@@ -126,6 +127,10 @@ class Payload():
         """Is the payload a button reply"""
         return self._type == Payload.BUTTON_TYPE
 
+    def get_options(self):
+        """Returns a copy of the options"""
+        return deepcopy(self._options)
+
     def get_payload_response(self):
         """Returns an array of payload responses"""
         payload = []
@@ -138,7 +143,8 @@ class Payload():
 
 class Message():
     """
-        Holds information about the message that was sent
+        Holds information about the message that was received from messenger 
+        or information to send back using a messenger.
     """
 
     def __init__(self,
