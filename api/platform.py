@@ -114,17 +114,19 @@ class PlatformService():
                                  headers=self.headers)
         if (response.status_code != 200):
             LOGGER.critical("Unable to contact the MLSB platform")
+            LOGGER.error(str(response.json()))
             raise PlatformException(PLATFORMMESSAGE)
         return response.json()
 
     def get_events(self):
         """Returns a dictionary object of the events
         """
-        r = requests.get(self.baseurl +
-                         "website/event/{}/json".format(date.today().year))
-        if (r.status_code != 200):
+        request_sub_url = "website/event/{}/json".format(date.today().year)
+        response = requests.get(self.baseurl + request_sub_url)
+        if (response.status_code != 200):
+            LOGGER.error(str(response.json()))
             raise PlatformException(PLATFORMMESSAGE)
-        return r.json()
+        return response.json()
 
     def league_leaders(self, stat):
         """Returns league leaders for some stat
@@ -135,12 +137,13 @@ class PlatformService():
             r.json(): a list of leaders
         """
         params = {"stat": stat, "year": date.today().year}
-        r = requests.post(self.baseurl + "api/view/league_leaders",
-                          data=params,
-                          headers=self.headers)
-        if (r.status_code != 200):
+        response = requests.post(self.baseurl + "api/view/league_leaders",
+                                 data=params,
+                                 headers=self.headers)
+        if (response.status_code != 200):
+            LOGGER.error(str(response.json()))
             raise PlatformException(PLATFORMMESSAGE)
-        return r.json()
+        return response.json()
 
     def fun_meter(self):
         """Returns the amount of fun
@@ -149,9 +152,10 @@ class PlatformService():
             fun: an amount of fun (int)
         """
         params = {"year": date.today().year}
-        r = requests.post(self.baseurl + "api/view/fun",
-                          data=params,
-                          headers=self.headers)
-        if (r.status_code != 200):
+        response = requests.post(self.baseurl + "api/view/fun",
+                                 data=params,
+                                 headers=self.headers)
+        if (response.status_code != 200):
+            LOGGER.error(str(response.json()))
             raise PlatformException(PLATFORMMESSAGE)
-        return r.json()
+        return response.json()
