@@ -39,6 +39,7 @@ SS_TITLE = "SS Leaders:"
 FUN_TOTAL_COMMENT = "Total fun: {}"
 NOGAMES_COMMENT = "No upcoming games"
 NOT_CAPTAIN_COMMENT = "Appears you are not a captain"
+NO_UPCOMING_GAMES_COMMENT = "There are no upcoming games"
 INTROS = ["What do you want?",
           "Well, hello there",
           "DAM Daniel!!, how you doing?",
