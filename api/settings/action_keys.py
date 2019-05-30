@@ -10,3 +10,4 @@
 WELCOME_KEY = "welcome"
 IDENTIFY_KEY = "identify user"
 HOME_KEY = "homescreen"
+SUBMIT_SCORE_KEY = "submit score"
