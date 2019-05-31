@@ -64,7 +64,11 @@ EMOJI = [u'\U0001f37a',
          u'\U0001f382',
          u'\u26a0',
          u'\u26be',
-         u'\U0001f649']
+         u'\U0001f649',
+         u'\U0001f37a',
+         u'\U0001f37b',
+         u'\U0001f942'
+         ]
 FUN_COMMENT = ["",
                "",
                "What fun",
