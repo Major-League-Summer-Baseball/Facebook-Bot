@@ -5,7 +5,9 @@
 @project: Facebook Bot
 @summary: Holds a base class that setups some common things needed
 '''
-from api.test.testDoubles import MessengerStub, MongoStub, PlatformStub
+from api.test.testDoubles.messengerDouble import MessengerDouble
+from api.test.testDoubles.databaseDouble import DatabaseDouble
+from api.test.testDoubles.platformDouble import PlatformDouble
 import unittest
 
 
@@ -14,9 +16,9 @@ class TestActionBase(unittest.TestCase):
 
     def setUp(self):
         """Setups all the test doubles"""
-        self.db = MongoStub()
-        self.platform = PlatformStub()
-        self.messenger = MessengerStub()
+        self.db = DatabaseDouble()
+        self.platform = PlatformDouble()
+        self.messenger = MessengerDouble()
 
     def create_action(self, action_class, message):
         """Will commonly need to create actions"""
