@@ -43,8 +43,6 @@ class HomescreenAction(ActionInterface):
 
         # if they sent a message try to process it
         action_taken = False
-        print(str(self.message.get_message()) +
-              " " + str(self.message.get_payload()))
         if self.message.get_message() is not None:
             result = self.parse_message(self.message.get_message(),
                                         self.message.get_sender_id(),
@@ -97,10 +95,10 @@ class HomescreenAction(ActionInterface):
             self.display_fun_meter()
         elif (message_string in
               [HomescreenAction.SUBMIT_SCORE_PAYLOAD.format().lower(),
-               MAIN_MENU_FUN_TITLE.lower()]):
-            if player.is_captain():
-                self.intiate_action(self.action_map,
-                                    SUBMIT_SCORE_KEY, player)
+               MAIN_MENU_SUBMIT_SCORE_TITLE.lower()]):
+            if player.is_captain() or player.is_convenor():
+                self.initiate_action(self.action_map,
+                                     SUBMIT_SCORE_KEY, player)
             else:
                 message = Message(sender_id,
                                   recipient_id=recipient_id,
@@ -201,15 +199,10 @@ class HomescreenAction(ActionInterface):
 
     def display_fun_meter(self):
         """Display the fun meter"""
-        fun = self.platform.fun_meter()
-        count = 0
-        this_year = get_this_year()
-        for element in fun:
-            if element['year'] == this_year:
-                count = element['count']
-        message = count * random_emoji()
+        fun_count = self.platform.fun_meter()[0].get("count", 0)
+        message = fun_count * random_emoji()
         message += "\n" + random_fun_comment()
-        message += "\n" + FUN_TOTAL_COMMENT.format(count)
+        message += "\n" + FUN_TOTAL_COMMENT.format(fun_count)
         m = Message(self.message.get_sender_id(),
                     recipient_id=self.message.get_recipient_id(),
                     message=message)
