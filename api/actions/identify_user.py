@@ -24,7 +24,7 @@ class IdentifyUser(ActionInterface):
     IMPOSTER_STATE = "Trying to steal someone's else email"
     LOCKED_OUT_STATE = " Locked out for trying 3 different emails"
 
-    def process(self, action_map):
+    def process(self, message, action_map):
         """
             The main entry point
 
@@ -34,6 +34,7 @@ class IdentifyUser(ActionInterface):
                     and use the given email to lookup player.
                 Lock out user if guess too many emails.
         """
+        self.message = message
         self.action_map = action_map
         messenger_id = self.message.get_sender_id()
         player = self.database.get_player(messenger_id)
@@ -161,4 +162,7 @@ class IdentifyUser(ActionInterface):
         player.set_player_info(player_info)
         self.database.save_player(player)
 
-        return self.initiate_action(self.action_map, WELCOME_KEY, player)
+        return self.initiate_action(self.message,
+                                    self.action_map,
+                                    WELCOME_KEY,
+                                    player)

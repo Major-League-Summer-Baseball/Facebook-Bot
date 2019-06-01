@@ -20,6 +20,7 @@ from api.errors import FacebookException, IdentityException,\
     BatterException
 from random import randint
 from base64 import b64encode
+from api.logging import LOGGER
 from api.messenger.facebook import FacebookMessenger
 from api.platform import PlatformService
 from api.database.mongo import DatabaseService
@@ -38,6 +39,7 @@ mongo = PyMongo(app)
 MESSENGER = FacebookMessenger(PAGE_ACCESS_TOKEN)
 PLATFORM = PlatformService(HEADERS, BASEURL)
 DATABASE = DatabaseService(mongo)
+ACTION_MAPPER = ActionMapper(DATABASE, PLATFORM, MESSENGER)
 
 # now can import db
 from api.db import get_user, lookup_player, save_user, update_player,\
@@ -240,10 +242,9 @@ def use_action_mapper(message_event):
     """Respond to the message using the action mapper"""
     try:
         message = MESSENGER.parse_response(message_event)
-        print(message)
-        action_mapper = ActionMapper(DATABASE, PLATFORM, MESSENGER, message)
-        action_mapper.process(ACTION_MAP)
+        ACTION_MAPPER.process(message, ACTION_MAP)
     except Exception:
+        LOGGER.critical(str(Exception))
         traceback.print_exc()
 
 

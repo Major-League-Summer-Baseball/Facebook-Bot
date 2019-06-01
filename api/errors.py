@@ -7,10 +7,10 @@
 '''
 
 
-PLATFORMMESSAGE = "Platform not available - try again later"
+PLATFORMMESSAGE = "Issue when communicating with website: {}"
 
 
-class ActionStateException(Exception):
+class InvalidActionState(Exception):
     pass
 
 
@@ -38,7 +38,7 @@ class BatterException(Exception):
     pass
 
 
-class SubscriptionException(Exception):
+class InvalidSubscription(Exception):
     pass
 
 

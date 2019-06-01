@@ -79,21 +79,20 @@ class ActionInterface():
     The action interface
     """
 
-    def __init__(self, database, platform, messenger, message):
+    def __init__(self, database, platform, messenger):
         """Constructor"""
         self.database = database
         self.platform = platform
-        self.message = message
         self.messenger = messenger
 
-    def process(self, action_map):
+    def process(self, message, action_map):
         """Process the action
         Parameters:
             action_map: maps action ids to their classes
         """
         raise NotImplementedError("Action needs to implement process method")
 
-    def initiate_action(self, action_map, next_action_key, player):
+    def initiate_action(self, message, action_map, next_action_key, player):
         """Initiate the action for the given key and update the player state"""
         player.set_action_state(ActionState(key=next_action_key))
         self.database.save_player(player)
@@ -101,5 +100,4 @@ class ActionInterface():
         next_action = action_map[next_action_key]
         return next_action(self.database,
                            self.platform,
-                           self.messenger,
-                           self.message).process(action_map)
+                           self.messenger).process(message, action_map)

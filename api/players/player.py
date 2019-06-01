@@ -8,7 +8,7 @@
 from api.players.subscription import Subscriptions
 from api.actions import ActionState
 from api.settings.action_keys import IDENTIFY_KEY
-from api.errors import ActionStateException, SubscriptionException
+from api.errors import InvalidActionState, InvalidSubscription
 
 
 class Player():
@@ -113,7 +113,7 @@ class Player():
         if isinstance(action_state, ActionState):
             self._action_state = action_state
         else:
-            raise ActionStateException("Incorrect type: expecting ActionState")
+            raise InvalidActionState("Incorrect type: expecting ActionState")
 
     def set_player_info(self, player_info):
         """Setter for the player info"""
@@ -137,7 +137,7 @@ class Player():
             self._subscriptions = subscriptions
         else:
             message = "Incorrect type: expecting Subscriptions"
-            raise SubscriptionException(message)
+            raise InvalidSubscription(message)
 
     def is_convenor(self):
         """Returns whether the given player is a convenor"""

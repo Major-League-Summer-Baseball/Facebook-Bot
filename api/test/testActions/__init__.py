@@ -20,9 +20,8 @@ class TestActionBase(unittest.TestCase):
         self.platform = PlatformDouble()
         self.messenger = MessengerDouble()
 
-    def create_action(self, action_class, message):
+    def create_action(self, action_class):
         """Will commonly need to create actions"""
         return action_class(self.db,
                             self.platform,
-                            self.messenger,
-                            message)
+                            self.messenger)

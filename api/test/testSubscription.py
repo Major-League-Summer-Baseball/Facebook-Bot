@@ -7,7 +7,7 @@
 '''
 from api.players.subscription import Subscription, Subscriptions,\
     RelativeTimeEnum
-from api.errors import SubscriptionException
+from api.errors import InvalidSubscription
 import unittest
 import datetime
 
@@ -125,7 +125,7 @@ class TestSubscription(unittest.TestCase):
         try:
             subscription.set_relative_time("")
             self.assertFalse(True, "Expecting an exception")
-        except SubscriptionException:
+        except InvalidSubscription:
             pass
         subscription.set_relative_time(RelativeTimeEnum.MORNING)
 
@@ -135,7 +135,7 @@ class TestSubscription(unittest.TestCase):
         try:
             subscription.set_time("")
             self.assertFalse(True, "Expecting an exception")
-        except SubscriptionException:
+        except InvalidSubscription:
             pass
         subscription.set_time(datetime.time(0, 0))
         subscription.set_time(datetime.datetime.now())

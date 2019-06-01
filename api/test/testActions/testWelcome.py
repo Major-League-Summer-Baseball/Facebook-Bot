@@ -22,6 +22,7 @@ class TestWelcome(TestActionBase):
     def setUp(self):
         self.action_map = {HOME_KEY: NoAction}
         super(TestWelcome, self).setUp()
+        self.action = self.create_action(WelcomeAction)
 
     def testNormalPlayer(self):
         """
@@ -50,9 +51,8 @@ class TestWelcome(TestActionBase):
         self.db.set_player(player)
         self.platform.set_mock_teams(teams=test_teams)
 
-        # process the action
-        welcome = self.create_action(WelcomeAction, message)
-        welcome.process(self.action_map)
+        # process the message
+        self.action.process(message, self.action_map)
 
         # check if the expected messages were sent back
         messages = self.messenger.get_messages()
@@ -101,9 +101,8 @@ class TestWelcome(TestActionBase):
         self.db.set_player(player)
         self.platform.set_mock_teams(teams=test_teams)
 
-        # process the action
-        welcome = self.create_action(WelcomeAction, message)
-        welcome.process(self.action_map)
+        # process the message
+        self.action.process(message, self.action_map)
 
         # check if the expected messages were sent back
         messages = self.messenger.get_messages()
@@ -162,9 +161,8 @@ class TestWelcome(TestActionBase):
         self.db.set_player(player)
         self.platform.set_mock_teams(teams=test_teams)
 
-        # process the action
-        welcome = self.create_action(WelcomeAction, message)
-        welcome.process(self.action_map)
+        # process the message
+        self.action.process(message, self.action_map)
 
         # check if the expected messages were sent back
         messages = self.messenger.get_messages()

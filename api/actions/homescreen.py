@@ -34,8 +34,9 @@ class HomescreenAction(ActionInterface):
     FUN_PAYLOAD = StringFormatter("fun")
     SUBMIT_SCORE_PAYLOAD = StringFormatter("score")
 
-    def process(self, action_map, buttons=True):
+    def process(self, message, action_map, buttons=True):
         """Process the homescreen message"""
+        self.message = message
         self.action_map = action_map
         self.buttons = buttons
         messenger_id = self.message.get_sender_id()
@@ -97,8 +98,10 @@ class HomescreenAction(ActionInterface):
               [HomescreenAction.SUBMIT_SCORE_PAYLOAD.format().lower(),
                MAIN_MENU_SUBMIT_SCORE_TITLE.lower()]):
             if player.is_captain() or player.is_convenor():
-                self.initiate_action(self.action_map,
-                                     SUBMIT_SCORE_KEY, player)
+                self.initiate_action(self.message,
+                                     self.action_map,
+                                     SUBMIT_SCORE_KEY,
+                                     player)
             else:
                 message = Message(sender_id,
                                   recipient_id=recipient_id,

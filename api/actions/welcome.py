@@ -20,7 +20,7 @@ class WelcomeAction(ActionInterface):
         subscribe them. Also, determine if they are captain or convenor.
     """
 
-    def process(self, action_map):
+    def process(self, message, action_map):
         """
             The main entry point
 
@@ -30,7 +30,7 @@ class WelcomeAction(ActionInterface):
                 Check if they are a captain
                 Otherwise just subscribe them to their teams
         """
-
+        self.message = message
         self.action_map = action_map
         messenger_id = self.message.get_sender_id()
         recipient_id = self.message.get_recipient_id()
@@ -103,4 +103,7 @@ class WelcomeAction(ActionInterface):
         """The method called when welcome action was successfully completed"""
         LOGGER.info("Welcomed player: " + str(player))
 
-        return self.initiate_action(self.action_map, HOME_KEY, player)
+        return self.initiate_action(self.message,
+                                    self.action_map,
+                                    HOME_KEY,
+                                    player)

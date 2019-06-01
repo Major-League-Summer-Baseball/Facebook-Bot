@@ -12,5 +12,5 @@ from api.actions import ActionInterface
 class NoAction(ActionInterface):
     """Stub for the next action to allow testing individual actions"""
 
-    def process(self, action_map):
+    def process(self, message, action_map):
         return

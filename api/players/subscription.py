@@ -7,7 +7,7 @@
 '''
 from enum import Enum
 from api.logging import LOGGER
-from api.errors import SubscriptionException
+from api.errors import InvalidSubscription
 from api.variables import SUBSCRIPTION_TIME_RANGE
 from api.helper import difference_in_minutes_between_dates
 import datetime
@@ -119,7 +119,7 @@ class Subscription():
         Parameters:
             relative_enum: the relative time to use (RelativeTimeEnum)
         Raises:
-             SubscriptionException if unrecognized relative time given
+             InvalidSubscription if unrecognized relative time given
         """
         if (relative_enum is RelativeTimeEnum.MORNING or
                 relative_enum is RelativeTimeEnum.HOUR_BEFORE or
@@ -128,14 +128,14 @@ class Subscription():
             return
         message = "Unrecongized relative time: {}".format(relative_enum)
         LOGGER.error(message)
-        raise SubscriptionException(message)
+        raise InvalidSubscription(message)
 
     def set_time(self, time):
         """Sets the time of the subscription
         Parameters:
             time: the datetime time to use for the subscription (Time)
         Raises:
-             SubscriptionException if time is not of type datetime.Time
+             InvalidSubscription if time is not of type datetime.Time
         """
         if (isinstance(time, datetime.time) or
                 isinstance(time, datetime.datetime)):
@@ -143,7 +143,7 @@ class Subscription():
             return
         message = "Given time of the wrong type: {}".format(time)
         LOGGER.error(message)
-        raise SubscriptionException(message)
+        raise InvalidSubscription(message)
 
 
 class Subscriptions():

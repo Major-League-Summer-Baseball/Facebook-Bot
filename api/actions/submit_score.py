@@ -10,5 +10,6 @@ from api.actions import ActionInterface
 
 class SubmitScoreAction(ActionInterface):
 
-    def process(self, action_map):
-        pass
+    def process(self, message, action_map):
+        self.action_map = action_map
+        self.message = message

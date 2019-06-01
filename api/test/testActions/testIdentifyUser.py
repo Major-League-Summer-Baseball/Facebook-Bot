@@ -23,6 +23,7 @@ class TestIdentifyUser(TestActionBase):
     def setUp(self):
         self.action_map = {WELCOME_KEY: NoAction}
         super(TestIdentifyUser, self).setUp()
+        self.action = self.create_action(IdentifyUser)
 
     def testFirstMessageDoNotMatch(self):
         """
@@ -38,11 +39,10 @@ class TestIdentifyUser(TestActionBase):
                     email="TestEmail@mlsb.ca",
                     gender="M")
         self.messenger.set_mock_user(user=user)
-        message = Message(test_sender_id, message="Hey what is up")
 
-        # create the action and process the message
-        identify = self.create_action(IdentifyUser, message)
-        identify.process(self.action_map)
+        # got the message what is up and process the action
+        message = Message(test_sender_id, message="Hey what is up")
+        self.action.process(message, self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -83,12 +83,9 @@ class TestIdentifyUser(TestActionBase):
         test_player_info = {"player_id": 1}
         self.platform.set_mock_player(player_by_email=test_player_info)
 
-        # got the message what is up
+        # got the message what is up and process the action
         message = Message(test_sender_id, message="Hey what is up")
-
-        # create the action and process the message
-        identify = self.create_action(IdentifyUser, message)
-        identify.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -134,12 +131,9 @@ class TestIdentifyUser(TestActionBase):
         test_player_info = {"player_id": 1}
         self.platform.set_mock_player(player_by_name=test_player_info)
 
-        # got the message what is up
+        # got the message what is up and process the action
         message = Message(test_sender_id, message="Hey what is up")
-
-        # create the action and process the message
-        identify = self.create_action(IdentifyUser, message)
-        identify.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -187,12 +181,9 @@ class TestIdentifyUser(TestActionBase):
         test_player_info = {"player_id": 1}
         self.platform.set_mock_player(player_by_name=test_player_info)
 
-        # got the message what is up
+        # got the message what is up and process the action
         message = Message(test_sender_id, message="Hey what is up")
-
-        # create the action and process the message
-        identify = self.create_action(IdentifyUser, message)
-        identify.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -247,13 +238,10 @@ class TestIdentifyUser(TestActionBase):
         test_player_info = {"player_id": 1}
         self.platform.set_mock_player(player_by_email=test_player_info)
 
-        # got the message contain their email
+        # got the message contain their email and process the message
         message = "My email is {}".format(test_email)
         message = Message(test_sender_id, message=message)
-
-        # create the action and process the message
-        identify = self.create_action(IdentifyUser, message)
-        identify.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -304,13 +292,10 @@ class TestIdentifyUser(TestActionBase):
         # set the db to return this player
         self.db.set_player(player)
 
-        # got the message contain their email
+        # got the message contain their email and process the message
         message = "My email is {}".format(test_email)
         message = Message(test_sender_id, message=message)
-
-        # create the action and process the message
-        identify = self.create_action(IdentifyUser, message)
-        identify.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()
@@ -366,10 +351,7 @@ class TestIdentifyUser(TestActionBase):
         # got the message contain their email
         message = "My email is {}".format(test_email)
         message = Message(test_sender_id, message=message)
-
-        # create the action and process the message
-        identify = self.create_action(IdentifyUser, message)
-        identify.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # get the player object that was saved after action
         save_player = self.db.inspect_saved_player()

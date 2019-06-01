@@ -31,6 +31,7 @@ class TestHomescreen(TestActionBase):
         self.action_map = {HOME_KEY: NoAction,
                            SUBMIT_SCORE_KEY: NoAction}
         super(TestHomescreen, self).setUp()
+        self.action = self.create_action(HomescreenAction)
 
     def background_setup(self, captain=False, convenor=False):
         """
@@ -68,8 +69,7 @@ class TestHomescreen(TestActionBase):
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID,
                           message=MAIN_MENU_EVENTS_TITLE)
-        eventAction = self.create_action(HomescreenAction, message)
-        eventAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -95,8 +95,7 @@ class TestHomescreen(TestActionBase):
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID,
                           message=MAIN_MENU_FUN_TITLE)
-        funMeterAction = self.create_action(HomescreenAction, message)
-        funMeterAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -137,8 +136,7 @@ class TestHomescreen(TestActionBase):
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID,
                           message=MAIN_MENU_LEAGUE_LEADERS_TITLE)
-        leagueLeaderAction = self.create_action(HomescreenAction, message)
-        leagueLeaderAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -191,8 +189,7 @@ class TestHomescreen(TestActionBase):
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID,
                           message=MAIN_MENU_UPCOMING_GAMES_TITLE)
-        upcomingGamesAction = self.create_action(HomescreenAction, message)
-        upcomingGamesAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -228,8 +225,7 @@ class TestHomescreen(TestActionBase):
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID,
                           message=MAIN_MENU_UPCOMING_GAMES_TITLE)
-        upcomingGamesAction = self.create_action(HomescreenAction, message)
-        upcomingGamesAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -251,8 +247,7 @@ class TestHomescreen(TestActionBase):
         self.background_setup()
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID)
-        displayOptionsAction = self.create_action(HomescreenAction, message)
-        displayOptionsAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -273,8 +268,7 @@ class TestHomescreen(TestActionBase):
         self.background_setup(captain=True)
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID)
-        displayOptionsAction = self.create_action(HomescreenAction, message)
-        displayOptionsAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -295,8 +289,7 @@ class TestHomescreen(TestActionBase):
         self.background_setup(convenor=True)
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID)
-        displayOptionsAction = self.create_action(HomescreenAction, message)
-        displayOptionsAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -316,8 +309,7 @@ class TestHomescreen(TestActionBase):
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID,
                           message=MAIN_MENU_SUBMIT_SCORE_TITLE)
-        submitScoresAction = self.create_action(HomescreenAction, message)
-        submitScoresAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
@@ -335,8 +327,7 @@ class TestHomescreen(TestActionBase):
         # process the action
         message = Message(TestHomescreen.TEST_SENDER_ID,
                           message=MAIN_MENU_SUBMIT_SCORE_TITLE)
-        submitScoresAction = self.create_action(HomescreenAction, message)
-        submitScoresAction.process(self.action_map)
+        self.action.process(message, self.action_map)
 
         # check if expected message was sent back
         messages = self.messenger.get_messages()
