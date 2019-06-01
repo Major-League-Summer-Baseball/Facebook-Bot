@@ -15,10 +15,10 @@ from api.settings.message_strings import MAIN_MENU_EVENTS_TITLE,\
     MAIN_MENU_SUBMIT_SCORE_TITLE, HR_TITLE, SS_TITLE, FUN_TOTAL_COMMENT,\
     NOGAMES_COMMENT, NOT_CAPTAIN_COMMENT, NO_UPCOMING_GAMES_COMMENT
 from api.settings.action_keys import SUBMIT_SCORE_KEY
-from api.actions import ActionInterface, ActionState
+from api.actions import Action, ActionState
 
 
-class HomescreenAction(ActionInterface):
+class Homescreen(Action):
     """
         The action when on the homescreen
 
@@ -79,23 +79,23 @@ class HomescreenAction(ActionInterface):
         action_taken = True
         message_string = message_string.lower()
         if (message_string in
-            [HomescreenAction.UPCOMING_GAMES_PAYLOAD.format().lower(),
+            [Homescreen.UPCOMING_GAMES_PAYLOAD.format().lower(),
              MAIN_MENU_UPCOMING_GAMES_TITLE.lower()]):
             self.display_upcoming_games(player)
         elif (message_string in
-              [HomescreenAction.LEAGUE_LEADERS_PAYLOAD.format().lower(),
+              [Homescreen.LEAGUE_LEADERS_PAYLOAD.format().lower(),
                MAIN_MENU_LEAGUE_LEADERS_TITLE.lower()]):
             self.display_league_leaders()
         elif (message_string in
-              [HomescreenAction.EVENTS_PAYLOAD.format().lower(),
+              [Homescreen.EVENTS_PAYLOAD.format().lower(),
                MAIN_MENU_EVENTS_TITLE.lower()]):
             self.display_events()
         elif (message_string in
-              [HomescreenAction.FUN_PAYLOAD.format().lower(),
+              [Homescreen.FUN_PAYLOAD.format().lower(),
                MAIN_MENU_FUN_TITLE.lower()]):
             self.display_fun_meter()
         elif (message_string in
-              [HomescreenAction.SUBMIT_SCORE_PAYLOAD.format().lower(),
+              [Homescreen.SUBMIT_SCORE_PAYLOAD.format().lower(),
                MAIN_MENU_SUBMIT_SCORE_TITLE.lower()]):
             if player.is_captain() or player.is_convenor():
                 self.initiate_action(self.message,
@@ -116,19 +116,19 @@ class HomescreenAction(ActionInterface):
 
         # create the option
         options = [Option(MAIN_MENU_UPCOMING_GAMES_TITLE,
-                          HomescreenAction.UPCOMING_GAMES_PAYLOAD),
+                          Homescreen.UPCOMING_GAMES_PAYLOAD),
                    Option(MAIN_MENU_LEAGUE_LEADERS_TITLE,
-                          HomescreenAction.LEAGUE_LEADERS_PAYLOAD),
+                          Homescreen.LEAGUE_LEADERS_PAYLOAD),
                    Option(MAIN_MENU_EVENTS_TITLE,
-                          HomescreenAction.EVENTS_PAYLOAD),
+                          Homescreen.EVENTS_PAYLOAD),
                    Option(MAIN_MENU_FUN_TITLE,
-                          HomescreenAction.FUN_PAYLOAD)]
+                          Homescreen.FUN_PAYLOAD)]
 
         # if captain then need option for submitting score
         if player.is_captain() or player.is_convenor():
             options.append(
                 Option(MAIN_MENU_SUBMIT_SCORE_TITLE,
-                       HomescreenAction.SUBMIT_SCORE_PAYLOAD))
+                       Homescreen.SUBMIT_SCORE_PAYLOAD))
 
         # determine if ussing buttons of quick reply
         payload_type = Payload.BUTTON_TYPE

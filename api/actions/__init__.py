@@ -74,9 +74,9 @@ class ActionState():
                                                    self._state)
 
 
-class ActionInterface():
+class Action():
     """
-    The action interface
+    The action interface - any action will need to implement process
     """
 
     def __init__(self, database, platform, messenger):

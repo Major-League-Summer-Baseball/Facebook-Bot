@@ -6,10 +6,10 @@
 @summary: A fake action that does nothing, used for testing to terminate
             the action map
 '''
-from api.actions import ActionInterface
+from api.actions import Action
 
 
-class NoAction(ActionInterface):
+class Nop(Action):
     """Stub for the next action to allow testing individual actions"""
 
     def process(self, message, action_map):

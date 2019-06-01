@@ -11,10 +11,10 @@ from api.logging import LOGGER
 from api.settings.action_keys import HOME_KEY
 from api.settings.message_strings import ACKNOWLEDGE_CONVENOR, PART_OF_TEAM,\
     ACKNOWLEDGE_CAPTAIN
-from api.actions import ActionInterface, ActionState
+from api.actions import Action, ActionState
 
 
-class WelcomeAction(ActionInterface):
+class WelcomeUser(Action):
     """
         Welcome the user to the league, find out what teams they are on and
         subscribe them. Also, determine if they are captain or convenor.

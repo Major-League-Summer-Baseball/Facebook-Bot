@@ -6,11 +6,11 @@
 @summary: Test Welcome Action
 '''
 from api.helper import get_this_year
-from api.test.testDoubles.noAction import NoAction
+from api.test.testDoubles.noAction import Nop
 from api.message import Message
 from api.players.player import Player
 from api.test.testActions import TestActionBase
-from api.actions.welcome import WelcomeAction
+from api.actions.welcome import WelcomeUser
 from api.settings.action_keys import HOME_KEY
 from api.settings.message_strings import PART_OF_TEAM, ACKNOWLEDGE_CAPTAIN,\
     ACKNOWLEDGE_CONVENOR
@@ -20,9 +20,9 @@ import unittest
 class TestWelcome(TestActionBase):
 
     def setUp(self):
-        self.action_map = {HOME_KEY: NoAction}
+        self.action_map = {HOME_KEY: Nop}
         super(TestWelcome, self).setUp()
-        self.action = self.create_action(WelcomeAction)
+        self.action = self.create_action(WelcomeUser)
 
     def testNormalPlayer(self):
         """

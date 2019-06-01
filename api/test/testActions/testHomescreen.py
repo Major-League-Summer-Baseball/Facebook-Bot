@@ -5,9 +5,9 @@
 @project: Facebook Bot
 @summary: Test Welcome Action
 '''
-from api.actions.homescreen import HomescreenAction
+from api.actions.homescreen import Homescreen
 from api.helper import get_this_year
-from api.test.testDoubles.noAction import NoAction
+from api.test.testDoubles.noAction import Nop
 from api.message import Message
 from api.players.player import Player
 from api.test.testActions import TestActionBase
@@ -28,10 +28,10 @@ class TestHomescreen(TestActionBase):
     TEST_SENDER_ID = "homescreen_test_sender_id"
 
     def setUp(self):
-        self.action_map = {HOME_KEY: NoAction,
-                           SUBMIT_SCORE_KEY: NoAction}
+        self.action_map = {HOME_KEY: Nop,
+                           SUBMIT_SCORE_KEY: Nop}
         super(TestHomescreen, self).setUp()
-        self.action = self.create_action(HomescreenAction)
+        self.action = self.create_action(Homescreen)
 
     def background_setup(self, captain=False, convenor=False):
         """

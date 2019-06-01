@@ -5,10 +5,10 @@
 @project: Facebook Bot
 @summary: Action for when a captain/convenor submits a score
 '''
-from api.actions import ActionInterface
+from api.actions import Action
 
 
-class SubmitScoreAction(ActionInterface):
+class SubmitScore(Action):
 
     def process(self, message, action_map):
         self.action_map = action_map

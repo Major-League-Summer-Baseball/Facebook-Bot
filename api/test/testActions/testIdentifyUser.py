@@ -5,7 +5,7 @@
 @project: Facebook Bot
 @summary: Test Identify User Action
 '''
-from api.test.testDoubles.noAction import NoAction
+from api.test.testDoubles.noAction import Nop
 from api.messenger.user import User
 from api.message import Message
 from api.players.player import Player
@@ -21,7 +21,7 @@ import unittest
 class TestIdentifyUser(TestActionBase):
 
     def setUp(self):
-        self.action_map = {WELCOME_KEY: NoAction}
+        self.action_map = {WELCOME_KEY: Nop}
         super(TestIdentifyUser, self).setUp()
         self.action = self.create_action(IdentifyUser)
 

@@ -6,12 +6,12 @@
 @summary: The main entry point for actions
 '''
 from api.logging import LOGGER
-from api.actions import ActionInterface
+from api.actions import Action
 from api.actions.identify_user import IdentifyUser
 from api.errors import ActionException
 
 
-class ActionMapper(ActionInterface):
+class ActionMapper(Action):
     """The main entry point for actions"""
 
     def process(self, message, action_map):
