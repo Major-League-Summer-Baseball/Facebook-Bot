@@ -6,7 +6,7 @@
 @summary: Test Welcome Action
 '''
 from api.helper import get_this_year
-from api.test.testDoubles import NoAction
+from api.test.testDoubles.noAction import NoAction
 from api.message import Message
 from api.players.player import Player
 from api.test.testActions import TestActionBase

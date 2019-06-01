@@ -5,7 +5,7 @@
 @project: Facebook Bot
 @summary: Test Identify User Action
 '''
-from api.test.testDoubles import NoAction
+from api.test.testDoubles.noAction import NoAction
 from api.messenger.user import User
 from api.message import Message
 from api.players.player import Player
