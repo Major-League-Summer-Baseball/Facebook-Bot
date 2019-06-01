@@ -8,7 +8,7 @@
 from api.actions import ActionInterface
 
 
-class HomescreenAction(ActionInterface):
+class SubmitScoreAction(ActionInterface):
 
     def process(self, action_map):
         pass
