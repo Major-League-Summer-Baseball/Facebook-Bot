@@ -10,7 +10,7 @@ from datetime import date
 from api.helper import get_this_year
 from api.logging import LOGGER
 from api.errors import PlatformException,\
-    PLATFORMMESSAGE, IdentityException
+    PLATFORMMESSAGE, IdentityException, NotCaptainForAnyTeam, TeamDoesNotExist
 
 
 class PlatformService():
@@ -159,3 +159,42 @@ class PlatformService():
             LOGGER.error(str(response.json()))
             raise PlatformException(PLATFORMMESSAGE)
         return response.json()
+
+    def games_to_submit_scores_for(self, player, team_id):
+        """Returns the captain games they can submit
+
+        Parameters:
+            player: the player(Player)
+            team_id: the id of the team to submit for
+        Returns:
+            games: a list of games
+        """
+        params = {"player_id": player.get_player_id(), "team": team_id}
+        response = requests.post(self.baseurl + "api/bot/captain/games",
+                                 data=params,
+                                 headers=self.headers)
+        if response.status_code == 401:
+            raise NotCaptainForAnyTeam(
+                "Says you are not a captain, check admin")
+        elif response.status_code == 404:
+            raise TeamDoesNotExist("Teams does not seem to exist")
+        elif (response.status_code != 200):
+            raise PlatformException(PLATFORMMESSAGE)
+        games = response.json()
+        return games
+
+    def lookup_team_roster(self, team_id):
+        """Lookup the team roster for the given team
+
+        Parameters:
+            team_id: the id of the team
+        Returns:
+            a list of players on the given team
+        """
+        request_url = self.baseurl + "/api/teamroster/" + str(team_id)
+        response = requests.get(request_url)
+        if response.status_code == 400:
+            raise TeamDoesNotExist("Teams does not seem to exist")
+        if response.status_code != 200:
+            raise PlatformException(PLATFORMMESSAGE)
+        return response.json().get("players", [])
