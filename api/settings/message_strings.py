@@ -35,9 +35,10 @@ FUN_TITLE = "Fun Meter"
 HR_TITLE = "HR Leaders:"
 SS_TITLE = "SS Leaders:"
 
-# Commensts used on homescreen
+# Comments used on homescreen
+HOMESCREEN_OPTIONS_PROMPT = "What would you like to do today?"
 FUN_TOTAL_COMMENT = "Total fun: {}"
-NOGAMES_COMMENT = "No upcoming games"
+NO_GAMES_COMMENT = "No upcoming games"
 NOT_CAPTAIN_COMMENT = "Appears you are not a captain"
 NO_UPCOMING_GAMES_COMMENT = "There are no upcoming games"
 INTROS = ["What do you want?",
@@ -73,3 +74,15 @@ FUN_COMMENT = ["",
                "",
                "What fun",
                "Are we having too much fun?"]
+
+# comments on Submit score
+NO_GAME_TO_SUBMIT = "There are no games to submit scores for"
+SELECT_TEAM_TO_SUBMIT_FOR_COMMENT = (
+    "Which team would you like to select team for")
+SELECT_GAME_TO_SUBMIT_COMMENT = (
+    "What game would you like to submit a score for")
+SUBMIT_SCORE_USING_BUTTONS_TITLE = "using buttons"
+SUBMIT_SCORE_BY_TEXT_TITLE = "just a message"
+PLEASE_USE_BUTTONS = "Please respond using a button"
+UNRECOGNIZED_GAME = "Sorry, did not recognize the game"
+UNRECOGNIZED_TEAM = "Sorry, did not recognize the team"
