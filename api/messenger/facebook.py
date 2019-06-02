@@ -10,7 +10,8 @@ import requests
 from api.logging import LOGGER
 from api.message import Message, Payload, Option, StringFormatter
 from api.messenger import Messenger
-from api.errors import MessengerException
+from api.errors import UnableToLookupUserInformation, UnableToSendMessage,\
+    UnableToFindSender
 from api.messenger.user import User
 from api.variables import NO_OPTIONS_AVAILABLE, SCROLL_FOR_MORE_OPTIONS,\
     EVEN_MORE_OPTIONS, PAGE_ACCESS_TOKEN
@@ -33,6 +34,9 @@ class FacebookMessenger(Messenger):
         Returns:
             user: the user (User)
         """
+
+        # using the messenger id try find information about them
+        # this information then will be used to compare to the league info
         LOGGER.debug(
             "Trying to identify facebook id {}".format(user_id))
         url = ("{}/{}/{}?{}&access_token={}".format(
@@ -42,22 +46,26 @@ class FacebookMessenger(Messenger):
             FacebookMessenger.FIELDS,
             PAGE_ACCESS_TOKEN))
         request_response = requests.get(url)
+
+        # an unsuccessful request would most likely be due to an invalid token
         if request_response.status_code != 200:
             LOGGER.critical("Facebook services not available")
             LOGGER.critical(str(request_response.json()))
-            raise MessengerException("Facebook services not available")
+            error_message = "Facebook services not available"
+            raise UnableToLookupUserInformation(error_message)
+
+        # now we know the person's facebook name and hopefully some other info
         data = request_response.json()
         LOGGER.debug("Data from looking up user" + str(data))
-        # now we know the person's facebook name
         name = data['name']
-        email = None
+        email = data.get("email", None)
         gender = None
-        if "email" in data.keys():
-            email = data["email"]
         if "gender" in data.keys():
             gender = ("m"
                       if data["gender"].lower() in FacebookMessenger.MALES
                       else "f")
+
+        # return an object with the information found by the Facebook
         user = User(user_id, name=name, email=email, gender=gender)
         return user
 
@@ -66,9 +74,6 @@ class FacebookMessenger(Messenger):
         Parameters:
             message: the message to send (Message)
         """
-        if message.get_sender_id() is None:
-            LOGGER.error("Trying to send message to None")
-            raise MessengerException("Sending message to unknown person")
         if message.get_payload() is None and message.get_message() is not None:
             self._send_message(message.get_message(), message.get_sender_id())
         if message.get_payload() is not None:
@@ -81,6 +86,16 @@ class FacebookMessenger(Messenger):
         Returns:
             message: the message parsed from the response (Message)
         """
+
+        sender_id = (None
+                     if response.get("sender") is None
+                     else response["sender"]["id"])
+        if sender_id is None:
+            LOGGER.error("Unable to get sender id")
+            LOGGER.error(str(response))
+            raise UnableToFindSender("Unable to get sender id")
+
+        LOGGER.debug(response)
         # assume both the payload and message text are None
         payload = None
         message_text = None
@@ -100,13 +115,7 @@ class FacebookMessenger(Messenger):
                     if "payload" in response["message"]["quick_reply"].keys():
                         quick_reply = response['message']['quick_reply']
                         message_text = quick_reply['payload']
-        sender_id = None
-        if response.get("sender"):
-            sender_id = response["sender"]["id"]
-        else:
-            LOGGER.error("Unable to get sender id")
-            LOGGER.error(str(response))
-            raise MessengerException("Unable to get sender id")
+
         if response.get("recipient"):
             recipient_id = response["recipient"]["id"]
         return Message(sender_id,
@@ -163,7 +172,7 @@ class FacebookMessenger(Messenger):
             self._send_data(data)
         elif len(buttons) <= 29:
             self._send_buttons_aux(message.get_sender_id(),
-                                   message.get_message(),
+                                   message,
                                    buttons)
         else:
             # split into two messages
@@ -209,7 +218,7 @@ class FacebookMessenger(Messenger):
             data: the data to send back (message, quick replies, buttons)
         """
         params = {"access_token": self.token}
-        print(data)
+        LOGGER.debug(data)
         data = json.dumps(data)
         request_url = "{}/{}/me/messages".format(self.URL, self.VERSION)
         request_response = requests.post(request_url,
@@ -219,4 +228,4 @@ class FacebookMessenger(Messenger):
         if request_response.status_code != 200:
             LOGGER.critical("Unable to send response using Facebook")
             LOGGER.error(str(request_response.json()))
-            raise MessengerException("Unable to send reponse")
+            raise UnableToSendMessage("Unable to send message using Facebook")

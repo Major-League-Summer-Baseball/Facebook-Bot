@@ -14,19 +14,51 @@ class InvalidActionState(Exception):
     pass
 
 
-class DatabaseException(Exception):
+class NotCaptainForAnyTeam(Exception):
     pass
 
 
-class FacebookException(Exception):
+class InvalidSubscription(Exception):
     pass
 
 
 class MessengerException(Exception):
+    """
+        An issue that might be encountered when sending and receiving messages
+        from a given messenger implementation
+    """
+    pass
+
+
+class FacebookException(MessengerException):
+    """
+        An issue that might be encountered when sending and receiving messages
+        when using facebook apis and data
+    """
+    pass
+
+
+class UnableToSendMessage(FacebookException):
+    pass
+
+
+class UnableToLookupUserInformation(FacebookException):
+    pass
+
+
+class UnableToFindSender(FacebookException):
+    pass
+
+
+class DatabaseException(Exception):
     pass
 
 
 class IdentityException(Exception):
+    pass
+
+
+class TeamDoesNotExist(Exception):
     pass
 
 
@@ -35,10 +67,6 @@ class NotCaptainException(Exception):
 
 
 class BatterException(Exception):
-    pass
-
-
-class InvalidSubscription(Exception):
     pass
 
 
