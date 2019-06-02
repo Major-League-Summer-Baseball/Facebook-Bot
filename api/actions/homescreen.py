@@ -6,16 +6,17 @@
 @summary: homescreen, displays the base options and handles selection of option
 '''
 from api.logging import LOGGER
-from api.message import Option, Payload, Message, StringFormatter,\
+from api.message import Option, Payload, Message,\
     LeagueLeaderFormatter, EventFormatter, GameFormatter
-from api.helper import random_emoji, random_fun_comment, get_this_year
+from api.helper import random_emoji, random_fun_comment
 from api.settings.message_strings import MAIN_MENU_EVENTS_TITLE,\
     MAIN_MENU_FUN_TITLE, MAIN_MENU_HR_TITLE, MAIN_MENU_SS_TITLE,\
     MAIN_MENU_UPCOMING_GAMES_TITLE, MAIN_MENU_LEAGUE_LEADERS_TITLE,\
     MAIN_MENU_SUBMIT_SCORE_TITLE, HR_TITLE, SS_TITLE, FUN_TOTAL_COMMENT,\
-    NOGAMES_COMMENT, NOT_CAPTAIN_COMMENT, NO_UPCOMING_GAMES_COMMENT
+    NO_GAMES_COMMENT, NOT_CAPTAIN_COMMENT, NO_UPCOMING_GAMES_COMMENT,\
+    HOMESCREEN_OPTIONS_PROMPT
 from api.settings.action_keys import SUBMIT_SCORE_KEY
-from api.actions import Action, ActionState
+from api.actions import Action
 
 
 class Homescreen(Action):
@@ -28,11 +29,11 @@ class Homescreen(Action):
             It should handle basic one off tasks like display games and other
             information pulled from website
     """
-    UPCOMING_GAMES_PAYLOAD = StringFormatter("upcoming")
-    LEAGUE_LEADERS_PAYLOAD = StringFormatter("leaders")
-    EVENTS_PAYLOAD = StringFormatter("events")
-    FUN_PAYLOAD = StringFormatter("fun")
-    SUBMIT_SCORE_PAYLOAD = StringFormatter("score")
+    UPCOMING_GAMES_PAYLOAD = "upcoming"
+    LEAGUE_LEADERS_PAYLOAD = "leaders"
+    EVENTS_PAYLOAD = "events"
+    FUN_PAYLOAD = "fun"
+    SUBMIT_SCORE_PAYLOAD = "score"
 
     def process(self, message, action_map, buttons=True):
         """Process the homescreen message"""
@@ -54,7 +55,7 @@ class Homescreen(Action):
         # if they sent a payload try to process it
         if self.message.get_payload() is not None:
             for option in self.message.get_payload().get_options():
-                result = self.parse_message(option.get_data().format(),
+                result = self.parse_message(option.get_data(),
                                             self.message.get_sender_id(),
                                             self.message.get_recipient_id(),
                                             player)
@@ -79,23 +80,23 @@ class Homescreen(Action):
         action_taken = True
         message_string = message_string.lower()
         if (message_string in
-            [Homescreen.UPCOMING_GAMES_PAYLOAD.format().lower(),
+            [Homescreen.UPCOMING_GAMES_PAYLOAD.lower(),
              MAIN_MENU_UPCOMING_GAMES_TITLE.lower()]):
             self.display_upcoming_games(player)
         elif (message_string in
-              [Homescreen.LEAGUE_LEADERS_PAYLOAD.format().lower(),
+              [Homescreen.LEAGUE_LEADERS_PAYLOAD.lower(),
                MAIN_MENU_LEAGUE_LEADERS_TITLE.lower()]):
             self.display_league_leaders()
         elif (message_string in
-              [Homescreen.EVENTS_PAYLOAD.format().lower(),
+              [Homescreen.EVENTS_PAYLOAD.lower(),
                MAIN_MENU_EVENTS_TITLE.lower()]):
             self.display_events()
         elif (message_string in
-              [Homescreen.FUN_PAYLOAD.format().lower(),
+              [Homescreen.FUN_PAYLOAD.lower(),
                MAIN_MENU_FUN_TITLE.lower()]):
             self.display_fun_meter()
         elif (message_string in
-              [Homescreen.SUBMIT_SCORE_PAYLOAD.format().lower(),
+              [Homescreen.SUBMIT_SCORE_PAYLOAD.lower(),
                MAIN_MENU_SUBMIT_SCORE_TITLE.lower()]):
             if player.is_captain() or player.is_convenor():
                 self.initiate_action(self.message,
@@ -141,6 +142,7 @@ class Homescreen(Action):
         # create the message and send it
         message = Message(self.message.get_sender_id(),
                           recipient_id=self.message.get_recipient_id(),
+                          message=HOMESCREEN_OPTIONS_PROMPT,
                           payload=payload)
         self.messenger.send_message(message)
 
