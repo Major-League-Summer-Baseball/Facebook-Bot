@@ -16,7 +16,7 @@ class ActionMapper(Action):
 
     def process(self, message, action_map):
         # if not a recognized user then need to identify them
-        player = self.database.get_player(self.message.get_sender_id())
+        player = self.database.get_player(message.get_sender_id())
         if player is None:
             return IdentifyUser(self.database,
                                 self.platform,
