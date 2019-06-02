@@ -35,6 +35,8 @@ class Message():
                  message=None,
                  payload=None):
         """Constructor"""
+        if sender_id is None:
+            raise ValueError("A message needs a sender id")
         self._message = message
         self._payload = payload
         self._sender_id = sender_id
