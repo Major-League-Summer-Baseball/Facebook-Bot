@@ -78,7 +78,8 @@ class Option():
     """
         Holds information about an option (payload, buttons, quick replies)
         title: the message title of the option
-        data: the data object of the payload (needs to have format method)
+        data: the data object of the payload
+            (needs to have format method or be a string)
     """
 
     def __init__(self, title, data):
@@ -86,11 +87,17 @@ class Option():
         self._title = title
         if isinstance(data, DataFormatter):
             self._data = data
+        elif isinstance(data, str):
+            self._data = StringFormatter(data)
         else:
-            raise OptionException("Given non-formatted data")
+            raise OptionException("Given non-formatted data or a string")
 
     def get_data(self):
         """Returns a data object that has a format method"""
+        return self._data.format()
+
+    def get_raw_data(self):
+        """Return the raw data object that has not been formatted"""
         return self._data
 
     def get_title(self):
@@ -137,13 +144,13 @@ class Payload():
         for option in self._options:
             payload.append({"type": self._type,
                             "title": option.get_title(),
-                            "payload": option.get_data().format()})
+                            "payload": option.get_data()})
         return payload
 
 
 class Message():
     """
-        Holds information about the message that was received from messenger 
+        Holds information about the message that was received from messenger
         or information to send back using a messenger.
     """
 
