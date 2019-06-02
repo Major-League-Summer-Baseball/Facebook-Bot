@@ -252,7 +252,7 @@ class TestHomescreen(TestActionBase):
         # check if expected message was sent back
         messages = self.messenger.get_messages()
         self.assertEqual(len(messages), 1)
-        self.assertTrue(messages[0].get_message() is None)
+        self.assertTrue(messages[0].get_message() is not None)
         self.assertTrue(messages[0].get_sender_id,
                         TestHomescreen.TEST_SENDER_ID)
         self.assertEqual(len(messages[0].get_payload().get_options()), 4)
@@ -273,7 +273,7 @@ class TestHomescreen(TestActionBase):
         # check if expected message was sent back
         messages = self.messenger.get_messages()
         self.assertEqual(len(messages), 1)
-        self.assertTrue(messages[0].get_message() is None)
+        self.assertTrue(messages[0].get_message() is not None)
         self.assertTrue(messages[0].get_sender_id,
                         TestHomescreen.TEST_SENDER_ID)
         self.assertEqual(len(messages[0].get_payload().get_options()), 5)
@@ -294,7 +294,7 @@ class TestHomescreen(TestActionBase):
         # check if expected message was sent back
         messages = self.messenger.get_messages()
         self.assertEqual(len(messages), 1)
-        self.assertTrue(messages[0].get_message() is None)
+        self.assertTrue(messages[0].get_message() is not None)
         self.assertTrue(messages[0].get_sender_id,
                         TestHomescreen.TEST_SENDER_ID)
         self.assertEqual(len(messages[0].get_payload().get_options()), 5)
