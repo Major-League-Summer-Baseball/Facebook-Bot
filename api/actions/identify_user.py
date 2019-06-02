@@ -5,7 +5,7 @@
 @project: Facebook Bot
 @summary: Action to determine the to identify user to someone in the legaue
 '''
-from api.actions import Action, ActionState
+from api.actions import Action
 from api.settings.message_strings import ASK_FOR_EMAIL, EMAIL_NOT_FOUND,\
     LOCKED_OUT, IMPOSTER, WELCOME_LEAGUE
 from api.settings.action_keys import WELCOME_KEY
