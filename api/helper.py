@@ -35,6 +35,15 @@ def difference_in_minutes_between_dates(d1, d2):
     return abs((d1 - d2).total_seconds() / 60.0)
 
 
+def convert_to_int(token):
+    """Returns whether the given token is an integer or not"""
+    try:
+        return int(token)
+    except ValueError:
+        pass
+    return None
+
+
 def parse_number(text):
     """Returns the first number in the text"""
     if type(text) is str:
@@ -53,6 +62,14 @@ def parse_number(text):
         except ValueError:
             pass
     return number
+
+
+def is_game_in_list_of_games(game_id, games):
+    """Returns whether the given game id is in the list of games"""
+    for game in games:
+        if str(game_id) == str(game.get("game_id", "")):
+            return True
+    return False
 
 
 def get_this_year():

@@ -6,7 +6,7 @@
 @summary: Test helper functions
 '''
 from api.helper import difference_in_minutes_between_dates, parse_number,\
-    parse_out_email
+    parse_out_email, is_game_in_list_of_games
 import datetime
 import sys
 import unittest
@@ -59,6 +59,28 @@ class TestHelperFunctions(unittest.TestCase):
         test = "Where you @"
         expected = None
         self.assertEqual(parse_out_email(test), expected)
+
+    def testIsGameInListOfGames(self):
+
+        # cases where game id in list of games
+        game_list = [{"game_id": 1}]
+        self.assertTrue(is_game_in_list_of_games(1, game_list))
+
+        game_list = [{"game_id": "1"}, {"game_id": 2}]
+        self.assertTrue(is_game_in_list_of_games(1, game_list))
+
+        game_list = [{"game_id": 2}, {"game_id": 1}]
+        self.assertTrue(is_game_in_list_of_games("1", game_list))
+
+        # cases where game id not in list of games
+        game_list = [{"game_id": 1}]
+        self.assertFalse(is_game_in_list_of_games(-1, game_list))
+
+        game_list = [{"game_id": "1"}, {"game_id": 2}]
+        self.assertFalse(is_game_in_list_of_games(-1, game_list))
+
+        game_list = [{"game_id": 2}, {"game_id": 1}]
+        self.assertFalse(is_game_in_list_of_games("-1", game_list))
 
 
 if __name__ == "__main__":
