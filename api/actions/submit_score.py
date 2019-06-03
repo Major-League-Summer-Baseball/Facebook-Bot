@@ -228,7 +228,9 @@ class SubmitScore(Action):
 
         # remember the game id for later
         self.save_data("game_id", game_id)
+
         # for now assuming what method they want to use
+        # TODO: support multiple
         action = SubmitScoreByButtons(self.database,
                                       self.platform,
                                       self.messenger)
