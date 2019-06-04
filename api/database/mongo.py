@@ -15,13 +15,13 @@ class DatabaseService():
     def __init__(self, mongo):
         self.mongo = mongo
 
-    def get_convenor_email_list(self):
-        """Returns a list of emails that should be treated as convenors"""
+    def get_convenor_name_list(self):
+        """Returns a list of names that should be treated as convenors"""
         entries = self.mongo.db.convenors.find({})
         convenor_list = []
         for entry in entries:
-            if "emails" in entry.keys():
-                for email in entry["emails"]:
+            if "names" in entry.keys():
+                for email in entry["names"]:
                     convenor_list.append(email)
         return convenor_list
 

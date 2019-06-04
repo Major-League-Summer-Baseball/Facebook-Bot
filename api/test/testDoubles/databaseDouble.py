@@ -17,7 +17,7 @@ class DatabaseDouble():
         self.player = player
         self.saved_player = None
         self._already_in_league = already_in_league
-        self.convenors = []
+        self._convenors = []
 
     def save_player(self, player):
         """Stub for the save player"""
@@ -50,8 +50,8 @@ class DatabaseDouble():
 
     def set_convenors(self, convenors):
         """Sets the mock of the convenors"""
-        self.convenors = convenors
+        self._convenors = convenors
 
-    def get_convenor_email_list(self):
+    def get_convenor_name_list(self):
         """Returns a list of mocked convenors"""
-        return self.convenors
+        return self._convenors
