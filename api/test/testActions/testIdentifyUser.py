@@ -80,7 +80,7 @@ class TestIdentifyUser(TestActionBase):
         self.messenger.set_mock_user(user=user)
 
         # the platform will recognize the player by email
-        test_player_info = {"player_id": 1}
+        test_player_info = self.random_player()
         self.platform.set_mock_player(player_by_email=test_player_info)
 
         # got the message what is up and process the action
@@ -103,7 +103,8 @@ class TestIdentifyUser(TestActionBase):
                          'messenger_name'])
 
         # make player info was saved
-        self.assertEqual(save_player.get_player_id(), 1)
+        self.assertEqual(save_player.get_player_id(),
+                         test_player_info.get("player_id"))
         self.assertEqual(save_player.get_player_info(), test_player_info)
 
         # make sure the message sent back makes sense
@@ -127,8 +128,8 @@ class TestIdentifyUser(TestActionBase):
                     gender="M")
         self.messenger.set_mock_user(user=user)
 
-        # the platform will recognize the player by email
-        test_player_info = {"player_id": 1}
+        # the platform will recognize the player by name
+        test_player_info = self.random_player()
         self.platform.set_mock_player(player_by_name=test_player_info)
 
         # got the message what is up and process the action
@@ -151,7 +152,8 @@ class TestIdentifyUser(TestActionBase):
                          'messenger_name'])
 
         # make player info was saved
-        self.assertEqual(save_player.get_player_id(), 1)
+        self.assertEqual(save_player.get_player_id(),
+                         test_player_info.get("player_id"))
         self.assertEqual(save_player.get_player_info(), test_player_info)
 
         # make sure the message sent back makes sense
@@ -178,7 +180,7 @@ class TestIdentifyUser(TestActionBase):
         self.db.set_already_in_league(True)
 
         # the platform will recognize the player by email
-        test_player_info = {"player_id": 1}
+        test_player_info = self.random_player()
         self.platform.set_mock_player(player_by_name=test_player_info)
 
         # got the message what is up and process the action
@@ -235,7 +237,7 @@ class TestIdentifyUser(TestActionBase):
         self.db.set_player(player)
 
         # we match the player on the platform
-        test_player_info = {"player_id": 1}
+        test_player_info = self.random_player()
         self.platform.set_mock_player(player_by_email=test_player_info)
 
         # got the message contain their email and process the message
