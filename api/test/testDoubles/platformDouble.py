@@ -80,3 +80,19 @@ class PlatformDouble():
     def get_upcoming_games(self, player):
         """Method that just returns the mock upcoming games"""
         return self._upcoming_games
+
+    def set_mock_team_roster(self, team_roster):
+        """Set the mock team roster that is to be returned"""
+        self._team_roster = team_roster
+
+    def lookup_team_roster(self, team_id):
+        """Method that just returns the mock team roster"""
+        return self._team_roster
+
+    def set_mock_games_to_submit_scores_for(self, games):
+        """Set the mock for the games that still need a score"""
+        self._games_to_submit_scores_for = games
+
+    def games_to_submit_scores_for(self, player, team_id):
+        """Method that just returns the mock games that need a score"""
+        return self._games_to_submit_scores_for
