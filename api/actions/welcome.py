@@ -47,6 +47,7 @@ class WelcomeUser(Action):
             teams = self.platform.lookup_all_teams()
             LOGGER.debug(teams)
             for team_id in teams.keys():
+                print("Team id: {}".format(team_id))
                 player.add_team({"team_id": team_id})
                 player.make_captain({"team_id": team_id})
         else:
@@ -76,10 +77,10 @@ class WelcomeUser(Action):
 
     def is_player_convenor(self, player):
         """Returns True if the player is a convenor, otherwise False"""
-        convenor_list = self.database.get_convenor_email_list()
-        email = player.get_player_info().get("email", None)
+        convenor_list = self.database.get_convenor_name_list()
+        name = player.get_player_info().get("player_name", None)
         is_convenor = False
-        if email is not None and email in convenor_list:
+        if name is not None and name in convenor_list:
             is_convenor = True
         return is_convenor
 

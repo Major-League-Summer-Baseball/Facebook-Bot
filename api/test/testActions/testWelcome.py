@@ -32,22 +32,14 @@ class TestWelcome(TestActionBase):
         # some test data
         test_sender_id = "test_sender_id"
         test_sender_name = "TestName"
-        test_player_id = 1
-        test_team_name = "Test Team Name"
-        test_team_id = 1
-        test_teams = [{"year": get_this_year(),
-                       "team_name": test_team_name,
-                       "team_id": test_team_id,
-                       "captain": {"player_id": test_player_id + 1}},
-                      {"year": get_this_year() - 1,
-                       "team_name": test_team_name + "2",
-                       "team_id": test_team_id + 1,
-                       "captain": {"player_id": test_player_id}}]
+        player_info = self.random_player()
+        test_teams = [self.random_team(),
+                      self.random_team(year=get_this_year() - 1)]
         message = Message(test_sender_id, message="")
 
         # setup the background of the player
         player = Player(messenger_id=test_sender_id, name=test_sender_name)
-        player.set_player_info({"player_id": test_player_id})
+        player.set_player_info(player_info)
         self.db.set_player(player)
         self.platform.set_mock_teams(teams=test_teams)
 
@@ -57,19 +49,19 @@ class TestWelcome(TestActionBase):
         # check if the expected messages were sent back
         messages = self.messenger.get_messages()
         self.assertEqual(len(messages), 1)
-        self.assertEqual(player.get_team_ids(), [test_team_id])
+        self.assertEqual(player.get_team_ids(), [test_teams[0].get("team_id")])
         self.assertEqual(messages[0].get_message(),
-                         PART_OF_TEAM.format(test_team_name))
+                         PART_OF_TEAM.format(test_teams[0].get("team_name")))
         self.assertEqual(messages[0].get_sender_id(), test_sender_id)
 
         # make sure player was subscribed to team
         player = self.db.inspect_saved_player()
         self.assertTrue(player.get_subscriptions(
-        ).is_subscribed_to_team(test_team_id))
+        ).is_subscribed_to_team(test_teams[0].get("team_id")))
 
         # but not subscribed to team from last year
         self.assertFalse(player.get_subscriptions(
-        ).is_subscribed_to_team(test_team_id + 1))
+        ).is_subscribed_to_team(test_teams[1].get("team_id")))
 
         # check action state was updated
         self.assertEqual(player.get_action_state().get_id(), HOME_KEY)
@@ -82,22 +74,14 @@ class TestWelcome(TestActionBase):
         # some test data
         test_sender_id = "test_sender_id"
         test_sender_name = "TestName"
-        test_player_id = 1
-        test_team_name = "Test Team Name"
-        test_team_id = 1
-        test_teams = [{"year": get_this_year(),
-                       "team_name": test_team_name,
-                       "team_id": test_team_id,
-                       "captain": {"player_id": test_player_id}},
-                      {"year": get_this_year() - 1,
-                       "team_name": test_team_name + "2",
-                       "team_id": test_team_id + 1,
-                       "captain": {"player_id": test_player_id + 1}}]
+        player_info = self.random_player()
+        test_teams = [self.random_team(captain=player_info),
+                      self.random_team(year=get_this_year() - 1)]
         message = Message(test_sender_id, message="")
 
         # setup the background of the player
         player = Player(messenger_id=test_sender_id, name=test_sender_name)
-        player.set_player_info({"player_id": test_player_id})
+        player.set_player_info(player_info)
         self.db.set_player(player)
         self.platform.set_mock_teams(teams=test_teams)
 
@@ -107,9 +91,9 @@ class TestWelcome(TestActionBase):
         # check if the expected messages were sent back
         messages = self.messenger.get_messages()
         self.assertEqual(len(messages), 2)
-        self.assertEqual(player.get_team_ids(), [test_team_id])
+        self.assertEqual(player.get_team_ids(), [test_teams[0].get("team_id")])
         self.assertEqual(messages[0].get_message(),
-                         PART_OF_TEAM.format(test_team_name))
+                         PART_OF_TEAM.format(test_teams[0].get("team_name")))
         self.assertEqual(messages[0].get_sender_id(), test_sender_id)
         self.assertEqual(messages[1].get_message(),
                          ACKNOWLEDGE_CAPTAIN)
@@ -118,12 +102,13 @@ class TestWelcome(TestActionBase):
         # make sure player was subscribed to team and is captain
         player = self.db.inspect_saved_player()
         self.assertTrue(player.get_subscriptions(
-        ).is_subscribed_to_team(test_team_id))
-        self.assertTrue(player.is_captain(team_id=test_team_id))
+        ).is_subscribed_to_team(test_teams[0].get("team_id")))
+        self.assertTrue(player.is_captain(
+            team_id=test_teams[0].get("team_id")))
 
         # but not subscribed to team from last year
         self.assertFalse(player.get_subscriptions(
-        ).is_subscribed_to_team(test_team_id + 1))
+        ).is_subscribed_to_team(test_teams[1].get("team_id")))
 
         # check action state was updated
         self.assertEqual(player.get_action_state().get_id(), HOME_KEY)
@@ -137,47 +122,41 @@ class TestWelcome(TestActionBase):
         # some test data
         test_sender_id = "test_sender_id"
         test_sender_name = "TestName"
-        test_player_id = 1
-        test_player_email = "TestEmail@mlsb.ca"
-        test_team_name = "Test Team Name"
-        test_team_id = 1
-        test_teams = [{"year": get_this_year(),
-                       "team_name": test_team_name,
-                       "team_id": test_team_id,
-                       "captain": {"player_id": test_player_id + 1}},
-                      {"year": get_this_year(),
-                       "team_name": test_team_name + "2",
-                       "team_id": test_team_id + 1,
-                       "captain": {"player_id": test_player_id}}]
-        message = Message(test_sender_id, message="")
+        player_info = self.random_player()
+        test_teams = [self.random_team(captain=player_info),
+                      self.random_team()]
 
         # setup the background of the player
         player = Player(messenger_id=test_sender_id, name=test_sender_name)
-        player.set_player_info({"email": test_player_email,
-                                "player_id": test_player_id})
-        self.db.set_convenors(["testEmail2@mlsb.ca",
-                               test_player_email,
-                               "testEmail2@mlsb.ca"])
+        player.set_player_info(player_info)
+        self.db.set_convenors(
+            [self.random_string(),
+             player_info.get("player_name"),
+             self.random_string()])
         self.db.set_player(player)
         self.platform.set_mock_teams(teams=test_teams)
 
         # process the message
+        message = Message(test_sender_id, message="")
         self.action.process(message, self.action_map)
 
         # check if the expected messages were sent back
         messages = self.messenger.get_messages()
         self.assertEqual(len(messages), 1)
         self.assertEqual(player.get_team_ids(),
-                         [test_team_id, test_team_id + 1])
+                         [test_teams[0].get("team_id"),
+                          test_teams[1].get("team_id")])
         self.assertEqual(messages[0].get_message(),
                          ACKNOWLEDGE_CONVENOR)
         self.assertEqual(messages[0].get_sender_id(), test_sender_id)
 
         # make sure convenor is subscribed to all teams
-        self.assertTrue(player.get_subscriptions(
-        ).is_subscribed_to_team(test_team_id))
-        self.assertTrue(player.get_subscriptions(
-        ).is_subscribed_to_team(test_team_id + 1))
+        player = self.db.inspect_saved_player()
+        subscriptions = player.get_subscriptions()
+        self.assertTrue(subscriptions.is_subscribed_to_team(
+            test_teams[0].get("team_id")))
+        self.assertTrue(subscriptions.is_subscribed_to_team(
+            test_teams[1].get("team_id")))
 
         # check action state was updated
         self.assertEqual(player.get_action_state().get_id(), HOME_KEY)
