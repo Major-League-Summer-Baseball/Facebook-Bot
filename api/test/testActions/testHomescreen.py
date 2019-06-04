@@ -38,7 +38,7 @@ class TestHomescreen(TestActionBase):
             Setups some background such as the player and his teams
 
             Returns:
-                test_teams: an array of teams he is part of
+                test_teams: an array of teams the player is part of
         """
         test_teams = [{"year": get_this_year() - 1,
                        "team_name": TestHomescreen.TEST_TEAM_NAME + "2",
