@@ -38,6 +38,7 @@ class SubmitScore(Action):
                                  action_map,
                                  HOME_KEY,
                                  self.player)
+            return
         current_state = self.player.get_action_state().get_state()
         if (current_state is None):
 
