@@ -102,17 +102,16 @@ class TestSubscription(unittest.TestCase):
         """Test send reminder when the relative time is night before game"""
         current = datetime.datetime.now()
         yesterday = current - datetime.timedelta(days=1)
-        tomorrow = current + datetime.timedelta(days=1)
+        two_days = current + datetime.timedelta(days=2)
         night_before = datetime.datetime.combine(
             yesterday.date(), datetime.time(20, 0))
         relative = RelativeTimeEnum.NIGHT_BEFORE
         #
         subscription = Subscription({Subscription.SUBCRIBED_KEY: True,
                                      Subscription.RELATIVE_TIME_KEY: relative})
-        # current and tomorrow are not within range
+        # current and two days are not within range
         self.assertFalse(subscription.should_send_reminder(current))
-        print(tomorrow, current)
-        self.assertFalse(subscription.should_send_reminder(tomorrow))
+        self.assertFalse(subscription.should_send_reminder(two_days))
 
         # if comparison is night before then we should send a reminder
         value = subscription.should_send_reminder(current,
