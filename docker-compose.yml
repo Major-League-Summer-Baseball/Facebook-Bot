@@ -2,28 +2,25 @@ version: "3"
 services:
     mlsb-bot:
         environment:
-            - ADMIN=$ADMIN
-            - DBNAME=$DBNAME
-            - DBPW=$DBPW
-            - DBUSER=$DBUSER
-            - LOCAL=$LOCAL
-            - MONGODB_URI=$MONGODB_URI
+            - ADMIN=${ADMIN:-admin}
+            - PASSWORD=${PASSWORD:-password}
+            - SECRET_KEY=${SECRET_KEY:-secret}
+            - MONGODB_URI=${MONGODB_URI:-mongodb://admin:password@mongodb:27018/mlsb}
             - PAGE_ACCESS_TOKEN=$PAGE_ACCESS_TOKEN
-            - PASSWORD=$PASSWORD
-            - PLATFORM=$PLATFORM
-            - URI=$URI
-            - VERIFY_TOKEN=$VERIFY_TOKEN 
+            - PLATFORM=${PLATFORM:-http://mlsb:5000/}
+            - VERIFY_TOKEN=$VERIFY_TOKEN
+            - BOT_PORT=${BOT_PORT:-5001}
         restart: always
         build: .
         ports:
-            - 8081:8081
+            - 5001:5001
         volumes:
             - .:/app
         depends_on:
             - postgres
             - redis
         command: >
-            gunicorn -b 0.0.0.0:8081
+            gunicorn -b 0.0.0.0:5001
                 --access-logfile -
                 --reload
                 "runserver:app"
@@ -32,16 +29,64 @@ services:
       image: mongo:latest
       container_name: "mongodb"
       environment:
-       - MONGO_INITDB_ROOT_USERNAME=$DBUSER
-       - MONGO_INITDB_ROOT_PASSWORD=$DBPW
-       - MONGO_INITDB_DATABASE=$DBNAME
+       - MONGO_INITDB_ROOT_USERNAME=${DBUSER:-admin}
+       - MONGO_INITDB_ROOT_PASSWORD=${DBPW:-password}
+       - MONGO_INITDB_DATABASE=${DBNAME:-mlsb}
        - MONGO_DATA_DIR=/usr/data/db
        - MONGO_LOG_DIR=/dev/null
       volumes:
        - 'mongodb:/data'
       ports:
-       - 27017:27017
-      command: mongod --smallfiles --logpath=/dev/null # --quiet
+       - 27018:27017
+      command: mongod --logpath=/dev/null # --quiet
+
+    mlsb:
+        image: mlsbca/mlsb-platform:master
+        environment:
+            - ADMIN=${ADMIN:-admin}
+            - PASSWORD=${PASSWORD:-password}
+            - DATABASE_URL=${DATABASE_URL:-postgresql://admin:password@postgres:5432/mlsb}
+            - SECRET_KEY=${SECRET_KEY:-secret}
+            - REDIS_URL=${REDIS_URL:-redis://redis:6379/1}
+        restart: always
+        ports:
+            - 5000:5000
+        depends_on:
+            - postgres
+            - redis
+        command: >
+            gunicorn -b 0.0.0.0:5000
+                --access-logfile -
+                --reload
+                "runserver:app"
+
+    postgres:
+        restart: always
+        image: postgres:10
+        environment:
+            - POSTGRES_USER=${ADMIN:-admin}
+            - POSTGRES_PASSWORD=${PASSWORD:-password}
+            - POSTGRES_DB=mlsb
+        volumes:
+            - "postgres:/data"
+        ports:
+            - 5436:5432
+        expose:
+            - 5436
+            - 5432
+
+    redis:
+        image: "redis:alpine"
+        command: redis-server
+        volumes:
+            - 'redis:/data'
+        ports:
+            - 6380:6379
+        expose:
+            - 6380
+            - 6379
 
 volumes:
-    name: mongodb
+    mongodb:
+    redis:
+    postgres:

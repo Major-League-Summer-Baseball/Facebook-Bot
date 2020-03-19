@@ -1,4 +1,4 @@
 Flask>=1.0.1
 Flask_PyMongo>=2.3.0
-requests==2.21.0
-gunicorn==19.9.0
+requests>=2.21.0
+gunicorn>=19.9.0
