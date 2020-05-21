@@ -189,7 +189,7 @@ class PlatformService():
         Parameters:
             team_id: the id of the team
         Returns:
-            a list of players on the given team
+            a team roster object
         """
         request_url = self.baseurl + "/api/teamroster/" + str(team_id)
         response = requests.get(request_url)
@@ -197,4 +197,4 @@ class PlatformService():
             raise TeamDoesNotExist("Teams does not seem to exist")
         if response.status_code != 200:
             raise PlatformException(PLATFORMMESSAGE)
-        return response.json().get("players", [])
+        return response.json()

@@ -6,8 +6,7 @@
 @summary: The basic player
 '''
 from api.players.subscription import Subscriptions
-from api.actions import ActionState
-from api.settings.action_keys import IDENTIFY_KEY
+from api.actions import ActionState, ActionKey
 from api.errors import InvalidActionState, InvalidSubscription
 
 
@@ -15,60 +14,54 @@ class Player():
 
     IDENTIFIER = "Player"
 
-    def __init__(self, messenger_id=None, name=None, dictionary=None):
+    def __init__(self, messenger_id=None, name=None):
         self._messenger_id = messenger_id
         self._messenger_name = name
         self._player_info = None
         self._subscriptions = Subscriptions()
-        self._action_state = ActionState(key=IDENTIFY_KEY)
+        self._action_state = ActionState(key=ActionKey.IDENTIFY_KEY)
         self._convenor = False
         self._teams = []
         self._teams_that_captain = []
-        if dictionary is not None:
-            self.from_dictionary(dictionary)
 
-    def from_dictionary(self, dictionary):
+    @staticmethod
+    def get_messenger_search(messenger_id):
+        """Returns the search parameters when searching by messenger id"""
+        return {"messenger_id": messenger_id}
+
+    @staticmethod
+    def get_player_search(player_info):
+        """Returns the search parameters when searching by player info"""
+        return {"player_id": player_info["player_id"]}
+
+    @staticmethod
+    def from_dictionary(dictionary):
         """Sets the player attributes from the given dictionary"""
-        self._messenger_id = (self._messenger_id
-                              if dictionary.get("messenger_id", None) is None
-                              else dictionary.get("messenger_id"))
+        messenger_id = dictionary.get("messenger_id", None)
 
         messenger_name = dictionary.get("messenger_name", None)
-        self._messenger_name = (self._messenger_name
-                                if messenger_name is None
-                                else messenger_name)
+        player = Player(messenger_id=messenger_id, name=messenger_name)
+        player._player_info = dictionary.get("player_info", None)
+        player._teams = dictionary.get("teams", [])
+        player._teams_that_captain = dictionary.get("captain", [])
+        player._convenor = dictionary.get("convenor", False)
 
-        self._player_info = (self._player_info
-                             if dictionary.get("player_info", None) is None
-                             else dictionary.get("player_info"))
+        # deal with subscriptions
+        subs = dictionary.get('subscriptions', None)
+        if subs is not None:
+            if isinstance(subs, Subscriptions):
+                # ensures have a deepcopy
+                subs = subs.to_dictionary()
+            player._subscriptions = Subscriptions.from_dictionary(subs)
 
-        self._teams = (self._teams
-                       if dictionary.get("teams", None) is None
-                       else dictionary.get("teams"))
-
-        self._teams_that_captain = (self._teams_that_captain
-                                    if dictionary.get("captain", None) is None
-                                    else dictionary.get("captain"))
-
-        self._convenor = (self._convenor
-                          if dictionary.get("convenor", None) is None
-                          else dictionary.get("convenor"))
-
-        subscriptions = dictionary.get('subscriptions', None)
-        if subscriptions is not None:
-            if isinstance(subscriptions, Subscriptions):
-                value = subscriptions.to_dictionary()
-                self._subscriptions = Subscriptions(dictionary=value)
-            else:
-                self._subscriptions = Subscriptions(dictionary=subscriptions)
-
+        # deal with action state
         action_state = dictionary.get("action_state", None)
         if action_state is not None:
             if isinstance(action_state, ActionState):
-                value = action_state.to_dictionary()
-                self._action_state = ActionState(None, dictionary=value)
-            else:
-                self._action_state = ActionState(None, dictionary=action_state)
+                # ensures have a deepcopy
+                action_state = action_state.to_dictionary()
+            player._action_state = ActionState.from_dictionary(action_state)
+        return player
 
     def to_dictionary(self):
         """Returns the dictionary representation of the player"""
@@ -86,19 +79,9 @@ class Player():
             "subscriptions": self._subscriptions.to_dictionary(),
             "action_state": self._action_state.to_dictionary()}
 
-    @staticmethod
-    def get_messenger_search(messenger_id):
-        """Returns the search parameters when searching by messenger id"""
-        return {"messenger_id": messenger_id}
-
     def messenger_search(self):
         """Returns the search parameters when searching by messenger id"""
         return {"messenger_id": self._messenger_id}
-
-    @staticmethod
-    def get_player_search(player_info):
-        """Returns the search parameters when searching by player info"""
-        return {"player_id": player_info["player_id"]}
 
     def get_name(self):
         """Gets the name of the player"""
@@ -106,7 +89,7 @@ class Player():
 
     def get_action_state(self):
         """Returns a copy of the state of the action the player is taking"""
-        return ActionState(None, dictionary=self._action_state.to_dictionary())
+        return ActionState.from_dictionary(self._action_state.to_dictionary())
 
     def set_action_state(self, action_state):
         """Setter for the action state"""
@@ -120,7 +103,7 @@ class Player():
         self._player_info = player_info
 
     def get_player_info(self):
-        """Returns whether information about the player"""
+        """Returns information about the player"""
         return self._player_info
 
     def get_player_id(self):
@@ -129,7 +112,8 @@ class Player():
 
     def get_subscriptions(self):
         """Returns a copy of the subscriptions"""
-        return Subscriptions(dictionary=self._subscriptions.to_dictionary())
+        return Subscriptions.from_dictionary(self._subscriptions
+                                             .to_dictionary())
 
     def set_subscriptions(self, subscriptions):
         """Sets the subscriptions"""

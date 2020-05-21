@@ -6,377 +6,182 @@
 @summary: Test Identify User Action
 '''
 from api.test.testDoubles.noAction import Nop
-from api.messenger.user import User
 from api.message import Message
 from api.players.player import Player
 from api.test.testActions import TestActionBase
-from api.actions.identify_user import IdentifyUser
-from api.settings.action_keys import IDENTIFY_KEY, WELCOME_KEY
-from api.settings.message_strings import ASK_FOR_EMAIL, WELCOME_LEAGUE,\
-    IMPOSTER, LOCKED_OUT
-
+from api.actions import ActionKey
+from api.actions.action.identify_user import IdentifyUser
+from api.settings.message_strings import Registration
 import unittest
 
 
 class TestIdentifyUser(TestActionBase):
+    TEST_SENDER_ID = "test welcome sender id"
+    TEST_SENDER_NAME = "test welcome sender name"
 
     def setUp(self):
-        self.action_map = {WELCOME_KEY: Nop}
+        self.action_map = {ActionKey.WELCOME_KEY: Nop}
         super(TestIdentifyUser, self).setUp()
         self.action = self.create_action(IdentifyUser)
+        self.player = Player(messenger_id=TestIdentifyUser.TEST_SENDER_ID,
+                             name=TestIdentifyUser.TEST_SENDER_NAME)
+        player_info = self.random_player()
+        self.player.set_player_info(player_info)
 
-    def testFirstMessageDoNotMatch(self):
-        """
-        Test that upon a first message and do not match based upon messenger
-        email or messenger name that we ask for their email.
-        """
+    def testFirstMessage(self):
+        """Test when they just sent their first message"""
+        # got the message contain their email and process the message
+        message = "What is up my friend?"
+        message = Message(TestIdentifyUser.TEST_SENDER_ID, message=message)
+        player = Player(messenger_id=TestIdentifyUser.TEST_SENDER_ID,
+                        name=TestIdentifyUser.TEST_SENDER_NAME)
+        (player, messages, next_action) = self.action.process(player,
+                                                              message)
 
-        # setup the user who is asking
-        test_sender_id = "test_sender_id"
-        test_sender_name = "TestName"
-        user = User(test_sender_id,
-                    name=test_sender_name,
-                    email="TestEmail@mlsb.ca",
-                    gender="M")
-        self.messenger.set_mock_user(user=user)
+        # should have been prompted for email
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          Registration.EMAIL_PROMPT.value)
 
-        # got the message what is up and process the action
-        message = Message(test_sender_id, message="Hey what is up")
-        self.action.process(message, self.action_map)
-
-        # get the player object that was saved after action
-        save_player = self.db.inspect_saved_player()
-
-        # check the state is as expected
-        action_state = save_player.get_action_state()
-        self.assertEqual(action_state.get_id(), IDENTIFY_KEY)
-        self.assertEqual(action_state.get_data(), {'wrongGuesses': 0})
+        # state should be set accordingly
+        action_state = player.get_action_state()
+        self.assertEqual(action_state.get_id(), ActionKey.IDENTIFY_KEY)
         self.assertEqual(action_state.get_state(), IdentifyUser.EMAIL_STATE)
 
-        # check the name and sender id were recorded properly
-        self.assertEqual(
-            test_sender_id, save_player.to_dictionary()['messenger_id'])
-        self.assertEqual(test_sender_name, save_player.to_dictionary()[
-                         'messenger_name'])
+        # ensure no next action is taken
+        self.assertIsNone(next_action)
 
-        # make sure the message sent back makes sense
-        message = self.messenger.get_messages()[0]
-        self.assertEqual(test_sender_id, message.get_sender_id())
-        self.assertEqual(None, message.get_payload())
-        self.assertEqual(ASK_FOR_EMAIL, message.get_message())
+    def testMissingEmailMessage(self):
+        """Test when the message has not email"""
+        # set the state to such that we are expecting their email response
+        state = IdentifyUser.EMAIL_STATE
+        self.player.set_action_state(self.player
+                                     .get_action_state()
+                                     .set_state(state))
 
-    def testFirstMessageMatchEmail(self):
-        """
-        Test that upon a first message and match upon email that we will
-        welcome to the league.
-        """
-        # setup the user who is asking
-        test_sender_id = "test_sender_id"
-        test_sender_name = "TestName"
-        user = User(test_sender_id,
-                    name=test_sender_name,
-                    email="TestEmail@mlsb.ca",
-                    gender="M")
-        self.messenger.set_mock_user(user=user)
+        # send message with no email
+        email = "I do not know"
+        message = Message(TestIdentifyUser.TEST_SENDER_ID, message=email)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              message)
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          Registration.EMAIL_PROMPT.value)
 
-        # the platform will recognize the player by email
-        test_player_info = self.random_player()
-        self.platform.set_mock_player(player_by_email=test_player_info)
+        # ensure no next action is taken
+        self.assertIsNone(next_action)
 
-        # got the message what is up and process the action
-        message = Message(test_sender_id, message="Hey what is up")
-        self.action.process(message, self.action_map)
-
-        # get the player object that was saved after action
-        save_player = self.db.inspect_saved_player()
-
-        # check the state is as expected, welcome state
-        action_state = save_player.get_action_state()
-        self.assertEqual(action_state.get_id(), WELCOME_KEY)
-        self.assertEqual(action_state.get_data(), {})
-        self.assertEqual(action_state.get_state(), None)
-
-        # check the name and sender id were recorded properly
-        self.assertEqual(
-            test_sender_id, save_player.to_dictionary()['messenger_id'])
-        self.assertEqual(test_sender_name, save_player.to_dictionary()[
-                         'messenger_name'])
-
-        # make player info was saved
-        self.assertEqual(save_player.get_player_id(),
-                         test_player_info.get("player_id"))
-        self.assertEqual(save_player.get_player_info(), test_player_info)
-
-        # make sure the message sent back makes sense
-        message = self.messenger.get_messages()[0]
-        self.assertEqual(test_sender_id, message.get_sender_id())
-        self.assertEqual(None, message.get_payload())
-        self.assertEqual(WELCOME_LEAGUE.format(test_sender_name),
-                         message.get_message())
-
-    def testFirstMessageMatchName(self):
-        """
-        Test that upon a first message and match upon person name that we will
-        welcome to the league.
-        """
-        # setup the user who is asking
-        test_sender_id = "test_sender_id"
-        test_sender_name = "TestName"
-        user = User(test_sender_id,
-                    name=test_sender_name,
-                    email=None,
-                    gender="M")
-        self.messenger.set_mock_user(user=user)
-
-        # the platform will recognize the player by name
-        test_player_info = self.random_player()
-        self.platform.set_mock_player(player_by_name=test_player_info)
-
-        # got the message what is up and process the action
-        message = Message(test_sender_id, message="Hey what is up")
-        self.action.process(message, self.action_map)
-
-        # get the player object that was saved after action
-        save_player = self.db.inspect_saved_player()
-
-        # check the state is as expected, welcome state
-        action_state = save_player.get_action_state()
-        self.assertEqual(action_state.get_id(), WELCOME_KEY)
-        self.assertEqual(action_state.get_data(), {})
-        self.assertEqual(action_state.get_state(), None)
-
-        # check the name and sender id were recorded properly
-        self.assertEqual(
-            test_sender_id, save_player.to_dictionary()['messenger_id'])
-        self.assertEqual(test_sender_name, save_player.to_dictionary()[
-                         'messenger_name'])
-
-        # make player info was saved
-        self.assertEqual(save_player.get_player_id(),
-                         test_player_info.get("player_id"))
-        self.assertEqual(save_player.get_player_info(), test_player_info)
-
-        # make sure the message sent back makes sense
-        message = self.messenger.get_messages()[0]
-        self.assertEqual(test_sender_id, message.get_sender_id())
-        self.assertEqual(None, message.get_payload())
-        self.assertEqual(WELCOME_LEAGUE.format(test_sender_name),
-                         message.get_message())
-
-    def testFirstMessageImposter(self):
-        """
-        Test that upon a first message and the person email / name seems to
-        indicate that they already are using the messenger that
-        we ask for their email.
-        """
-        # setup the user who is asking
-        test_sender_id = "test_sender_id"
-        test_sender_name = "TestName"
-        user = User(test_sender_id,
-                    name=test_sender_name,
-                    email=None,
-                    gender="M")
-        self.messenger.set_mock_user(user=user)
-        self.db.set_already_in_league(True)
-
-        # the platform will recognize the player by email
-        test_player_info = self.random_player()
-        self.platform.set_mock_player(player_by_name=test_player_info)
-
-        # got the message what is up and process the action
-        message = Message(test_sender_id, message="Hey what is up")
-        self.action.process(message, self.action_map)
-
-        # get the player object that was saved after action
-        save_player = self.db.inspect_saved_player()
-
-        # check the state is as expected
-        action_state = save_player.get_action_state()
-        self.assertEqual(action_state.get_id(), IDENTIFY_KEY)
-        self.assertEqual(action_state.get_data(), {'wrongGuesses': 0})
-        self.assertEqual(action_state.get_state(), IdentifyUser.EMAIL_STATE)
-
-        # check the name and sender id were recorded properly
-        self.assertEqual(
-            test_sender_id, save_player.to_dictionary()['messenger_id'])
-        self.assertEqual(test_sender_name, save_player.to_dictionary()[
-                         'messenger_name'])
-
-        # make sure the message sent back makes sense
-        message = self.messenger.get_messages()[0]
-        self.assertEqual(test_sender_id, message.get_sender_id())
-        self.assertEqual(None, message.get_payload())
-        self.assertEqual(ASK_FOR_EMAIL, message.get_message())
-
-    def testMessageWithTheirEmailButImposter(self):
-        """
-        Test that upon a message with an email that is already claim by some
-        other user of the bot.
-        """
-        # setup the user who is asking
-        test_sender_id = "test_sender_id"
-        test_sender_name = "TestName"
-        test_email = "testMessageWithTheirEmailButImposted@mlsb"
-        user = User(test_sender_id,
-                    name=test_sender_name,
-                    email=test_email,
-                    gender="M")
-        self.messenger.set_mock_user(user=user)
-
+    def testCatchingImposter(self):
+        """Test player using an already claimed email by another user."""
         # the player is already in the league
         self.db.set_already_in_league(True)
-        player = Player(messenger_id=test_sender_id, name=test_sender_name)
 
         # set the state to such that we are expecting their email
-        action_state = player.get_action_state()
-        action_state.set_state(IdentifyUser.EMAIL_STATE)
-        action_state.set_data({"wrongGuesses": 0})
-        player.set_action_state(action_state)
-
-        # set the db to return this player
-        self.db.set_player(player)
+        state = IdentifyUser.EMAIL_STATE
+        self.player.set_action_state(self.player
+                                     .get_action_state()
+                                     .set_state(state))
 
         # we match the player on the platform
         test_player_info = self.random_player()
         self.platform.set_mock_player(player_by_email=test_player_info)
 
         # got the message contain their email and process the message
-        message = "My email is {}".format(test_email)
-        message = Message(test_sender_id, message=message)
-        self.action.process(message, self.action_map)
-
-        # get the player object that was saved after action
-        save_player = self.db.inspect_saved_player()
+        message = "My email is {}".format("someEmail@mlsb.ca")
+        message = Message(TestIdentifyUser.TEST_SENDER_ID, message=message)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              message)
 
         # check the state is as expected
-        action_state = save_player.get_action_state()
-        self.assertEqual(action_state.get_id(), IDENTIFY_KEY)
-        self.assertEqual(action_state.get_data(), {'wrongGuesses': 0})
+        action_state = player.get_action_state()
+        self.assertEqual(action_state.get_id(), ActionKey.IDENTIFY_KEY)
         self.assertEqual(action_state.get_state(), IdentifyUser.IMPOSTER_STATE)
 
-        # check the name and sender id were recorded properly
-        self.assertEqual(
-            test_sender_id, save_player.to_dictionary()['messenger_id'])
-        self.assertEqual(test_sender_name, save_player.to_dictionary()[
-                         'messenger_name'])
-
         # make sure the message sent back makes sense
-        message = self.messenger.get_messages()[0]
-        self.assertEqual(test_sender_id, message.get_sender_id())
+        message = messages[0]
+        self.assertEqual(TestIdentifyUser.TEST_SENDER_ID,
+                         message.get_sender_id())
         self.assertEqual(None, message.get_payload())
-        self.assertEqual(IMPOSTER, message.get_message())
+        self.assertEqual(Registration.IMPOSTER.value, message.get_message())
 
-    def testMessageWithTheirEmailLockedOut(self):
-        """
-        Test when some user reponds with an email that
-        they are locked out if they reached the max number of guesses
-        """
-        # setup the user who is asking
-        test_sender_id = "test_sender_id"
-        test_sender_name = "TestName"
-        test_email = "testMessageWithTheirEmailLockedOut@mlsb"
-        user = User(test_sender_id,
-                    name=test_sender_name,
-                    email=test_email,
-                    gender="M")
-        self.messenger.set_mock_user(user=user)
+        # ensure no next action is taken
+        self.assertIsNone(next_action)
 
-        # the player is already in the league
-        self.db.set_already_in_league(True)
-        player = Player(messenger_id=test_sender_id, name=test_sender_name)
+    def testEventuallyLockedOut(self):
+        """Test that repeated guesses at an email eventually locks them out"""
 
-        # set the state to such that we are expecting their email
+        # set the state to such that we are expecting their email response
+        state = IdentifyUser.EMAIL_STATE
+        self.player.set_action_state(self.player
+                                     .get_action_state()
+                                     .set_state(state))
+
+        # send a bunch of bad emails
+        attempts = 0
+        player = self.player
+        while attempts <= IdentifyUser.NUMBER_OF_TRIES:
+
+            email = "My email is {}".format(self.random_email())
+            message = Message(TestIdentifyUser.TEST_SENDER_ID, message=email)
+            (player, messages, next_action) = self.action.process(player,
+                                                                  message)
+            self.assertIsNone(next_action)
+            self.assertEquals(len(messages), 2)
+            self.assertEquals(messages[0].get_message(),
+                              Registration.EMAIL_NOT_FOUND.value)
+            self.assertEquals(messages[1].get_message(),
+                              Registration.EMAIL_PROMPT.value)
+            attempts += 1
+
+        # ask one more time to get locked out
+        email = "My email is {}".format(self.random_email())
+        message = Message(TestIdentifyUser.TEST_SENDER_ID, message=email)
+        (player, messages, next_action) = self.action.process(player,
+                                                              message)
+        # should be locked out
         action_state = player.get_action_state()
-        action_state.set_state(IdentifyUser.EMAIL_STATE)
-        action_state.set_data({"wrongGuesses": 3})
-        player.set_action_state(action_state)
-
-        # set the db to return this player
-        self.db.set_player(player)
-
-        # got the message contain their email and process the message
-        message = "My email is {}".format(test_email)
-        message = Message(test_sender_id, message=message)
-        self.action.process(message, self.action_map)
-
-        # get the player object that was saved after action
-        save_player = self.db.inspect_saved_player()
-
-        # check the state is as expected
-        action_state = save_player.get_action_state()
-        self.assertEqual(action_state.get_id(), IDENTIFY_KEY)
-        self.assertEqual(action_state.get_data(), {'wrongGuesses': 4})
+        self.assertEqual(action_state.get_id(), ActionKey.IDENTIFY_KEY)
         self.assertEqual(action_state.get_state(),
                          IdentifyUser.LOCKED_OUT_STATE)
 
-        # check the name and sender id were recorded properly
-        self.assertEqual(
-            test_sender_id, save_player.to_dictionary()['messenger_id'])
-        self.assertEqual(test_sender_name, save_player.to_dictionary()[
-                         'messenger_name'])
-
         # make sure the message sent back makes sense
-        message = self.messenger.get_messages()[-1]
-        self.assertEqual(test_sender_id, message.get_sender_id())
-        self.assertEqual(None, message.get_payload())
-        self.assertEqual(LOCKED_OUT, message.get_message())
+        message = messages[0]
+        self.assertEquals(len(messages), 2)
+        self.assertEquals(messages[0].get_message(),
+                          Registration.EMAIL_NOT_FOUND.value)
+        self.assertEqual(messages[1].get_message(),
+                         Registration.LOCKED_OUT.value)
+
+        # ensure no next action is taken
+        self.assertIsNone(next_action)
 
     def testMessageWithTheirEmailSuccessful(self):
-        """
-        Test when a user responds with an email that is unclaimed
-        they are welcomed to the league.
-        """
-        # setup the user who is asking
-        test_sender_id = "test_sender_id"
-        test_sender_name = "TestName"
-        test_email = "testMessageWithTheirEmailSuccessful@mlsb"
-        user = User(test_sender_id,
-                    name=test_sender_name,
-                    email=test_email,
-                    gender="M")
-        self.messenger.set_mock_user(user=user)
-
-        # the player associated with the messenger id
-        player = Player(messenger_id=test_sender_id, name=test_sender_name)
+        """Test when they give a correct email that is not being used."""
+        # the player has not signed up yet
+        self.db.set_already_in_league(False)
+        player_info = self.random_player()
+        self.platform.set_mock_player(player_by_email=player_info)
 
         # set the state to such that we are expecting their email
-        action_state = player.get_action_state()
-        action_state.set_state(IdentifyUser.EMAIL_STATE)
-        action_state.set_data({"wrongGuesses": 0})
-        player.set_action_state(action_state)
+        state = IdentifyUser.EMAIL_STATE
+        self.player.set_action_state(self.player
+                                     .get_action_state()
+                                     .set_state(state))
 
-        # set the db to return this player
-        self.db.set_player(player)
+        # got the message contain their email and process the message
+        message = "My email is {}".format("someEmail@mlsb.ca")
+        message = Message(TestIdentifyUser.TEST_SENDER_ID, message=message)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              message)
 
-        self.platform.set_mock_player(player_by_email={"player_id": 1})
+        # ensure that the player info is saved
+        self.assertEquals(player_info, player.get_player_info())
 
-        # got the message contain their email
-        message = "My email is {}".format(test_email)
-        message = Message(test_sender_id, message=message)
-        self.action.process(message, self.action_map)
+        # make sure that no message sent back (handles by welcome action)
+        self.assertEquals(len(messages), 0)
 
-        # get the player object that was saved after action
-        save_player = self.db.inspect_saved_player()
-
-        # check the state is as expected
-        action_state = save_player.get_action_state()
-        self.assertEqual(action_state.get_id(), WELCOME_KEY)
-        self.assertEqual(action_state.get_data(), {})
-        self.assertEqual(action_state.get_state(),
-                         None)
-
-        # check the name and sender id were recorded properly
-        self.assertEqual(
-            test_sender_id, save_player.to_dictionary()['messenger_id'])
-        self.assertEqual(test_sender_name, save_player.to_dictionary()[
-                         'messenger_name'])
-
-        # make sure the message sent back makes sense
-        message = self.messenger.get_messages()[0]
-        expected_message = WELCOME_LEAGUE.format(test_sender_name)
-        self.assertEqual(test_sender_id, message.get_sender_id())
-        self.assertEqual(None, message.get_payload())
-        self.assertEqual(expected_message, message.get_message())
+        # ensure no next action is taken
+        self.assertEquals(next_action, ActionKey.WELCOME_KEY)
 
 
 if __name__ == "__main__":

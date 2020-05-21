@@ -8,7 +8,7 @@ import os
 from api import app
 if __name__ == "__main__":
     start = False
-    port = os.get("BOT_PORT", 5000)
+    port = os.environ.get("BOT_PORT", 5000)
     while not start and port < 5010:
         try:
             app.run(debug=True, port=port)

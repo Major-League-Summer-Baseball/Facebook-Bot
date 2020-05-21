@@ -30,7 +30,9 @@ class TestSubscription(unittest.TestCase):
         dictionary_constructor = {Subscription.SUBCRIBED_KEY: False,
                                   Subscription.RELATIVE_TIME_KEY: relative,
                                   Subscription.TIME_KEY: given_time}
-        subscription = Subscription(dictionary=dictionary_constructor)
+
+        # setup the subscription
+        subscription = Subscription.from_dictionary(dictionary_constructor)
         self.assertFalse(subscription.is_subscribed())
         dictionary = subscription.to_dictionary()
         self.assertEqual(dictionary[Subscription.SUBCRIBED_KEY], False)
@@ -47,9 +49,11 @@ class TestSubscription(unittest.TestCase):
         today_at_eight = datetime.datetime.combine(
             current.date(), datetime.time(8, 0))
 
-        #
-        subscription = Subscription({Subscription.SUBCRIBED_KEY: True,
-                                     Subscription.TIME_KEY: "8:00"})
+        # setup subscription
+        sub_data = {Subscription.SUBCRIBED_KEY: True,
+                    Subscription.TIME_KEY: "8:00"}
+        subscription = Subscription.from_dictionary(sub_data)
+
         # yesterday and tomorrow are not within range
         self.assertFalse(subscription.should_send_reminder(yesterday))
         self.assertFalse(subscription.should_send_reminder(tomorrow))
@@ -67,9 +71,12 @@ class TestSubscription(unittest.TestCase):
         today_at_eight = datetime.datetime.combine(
             current.date(), datetime.time(8, 0))
         relative = RelativeTimeEnum.MORNING
-        #
-        subscription = Subscription({Subscription.SUBCRIBED_KEY: True,
-                                     Subscription.RELATIVE_TIME_KEY: relative})
+
+        # setup subscription
+        sub_data = {Subscription.SUBCRIBED_KEY: True,
+                    Subscription.RELATIVE_TIME_KEY: relative}
+        subscription = Subscription.from_dictionary(sub_data)
+
         # yesterday and tomorrow are not within range
         self.assertFalse(subscription.should_send_reminder(yesterday))
         self.assertFalse(subscription.should_send_reminder(tomorrow))
@@ -86,9 +93,12 @@ class TestSubscription(unittest.TestCase):
         tomorrow = current + datetime.timedelta(days=1)
         hour_ago = current - datetime.timedelta(hours=1)
         relative = RelativeTimeEnum.HOUR_BEFORE
-        #
-        subscription = Subscription({Subscription.SUBCRIBED_KEY: True,
-                                     Subscription.RELATIVE_TIME_KEY: relative})
+
+        # setup the subscription
+        sub_data = {Subscription.SUBCRIBED_KEY: True,
+                    Subscription.RELATIVE_TIME_KEY: relative}
+        subscription = Subscription.from_dictionary(sub_data)
+
         # yesterday and tomorrow are not within range
         self.assertFalse(subscription.should_send_reminder(yesterday))
         self.assertFalse(subscription.should_send_reminder(tomorrow))
@@ -106,9 +116,12 @@ class TestSubscription(unittest.TestCase):
         night_before = datetime.datetime.combine(
             yesterday.date(), datetime.time(20, 0))
         relative = RelativeTimeEnum.NIGHT_BEFORE
-        #
-        subscription = Subscription({Subscription.SUBCRIBED_KEY: True,
-                                     Subscription.RELATIVE_TIME_KEY: relative})
+
+        # setup the subscription
+        sub_data = {Subscription.SUBCRIBED_KEY: True,
+                    Subscription.RELATIVE_TIME_KEY: relative}
+        subscription = Subscription.from_dictionary(sub_data)
+
         # current and two days are not within range
         self.assertFalse(subscription.should_send_reminder(current))
         self.assertFalse(subscription.should_send_reminder(two_days))
@@ -151,20 +164,22 @@ class TestSubscriptions(unittest.TestCase):
     def testConversion(self):
         """Test able to construct from dictionary and export"""
         dictionary = {"league": False, "1": Subscription().to_dictionary()}
-        subscriptions = Subscriptions(dictionary=dictionary)
+        subscriptions = Subscriptions.from_dictionary(dictionary)
         self.assertFalse(subscriptions.is_subscribed_to_league())
         self.assertTrue(subscriptions.is_subscribed_to_team(1))
-        subscriptions = Subscriptions(dictionary=subscriptions.to_dictionary())
+        subs_data = subscriptions.to_dictionary()
+        subscriptions = Subscriptions.from_dictionary(subs_data)
         self.assertFalse(subscriptions.is_subscribed_to_league())
         self.assertTrue(subscriptions.is_subscribed_to_team(1))
 
     def testConversionUsingObject(self):
         """Test able conversion where subscription is object not dict"""
         dictionary = {"league": False, "1": Subscription()}
-        subscriptions = Subscriptions(dictionary=dictionary)
+        subscriptions = Subscriptions.from_dictionary(dictionary)
         self.assertFalse(subscriptions.is_subscribed_to_league())
         self.assertTrue(subscriptions.is_subscribed_to_team(1))
-        subscriptions = Subscriptions(dictionary=subscriptions.to_dictionary())
+        sub_data = subscriptions.to_dictionary()
+        subscriptions = Subscriptions.from_dictionary(sub_data)
         self.assertFalse(subscriptions.is_subscribed_to_league())
         self.assertTrue(subscriptions.is_subscribed_to_team(1))
 
@@ -184,7 +199,7 @@ class TestSubscriptions(unittest.TestCase):
         """Test able to unsubscribe to team"""
         subscribed_teams = {"1": Subscription().to_dictionary(),
                             "2": Subscription().to_dictionary()}
-        subscriptions = Subscriptions(dictionary=subscribed_teams)
+        subscriptions = Subscriptions.from_dictionary(subscribed_teams)
         subscriptions.unsubscribe_from_team(1)
         self.assertFalse(subscriptions.is_subscribed_to_team(1))
         self.assertFalse(subscriptions.is_subscribed_to_team("1"))

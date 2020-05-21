@@ -31,7 +31,7 @@ class DatabaseService():
         player_dictionary = self.mongo.db.users.find_one(search_parameters)
         if player_dictionary is None:
             return None
-        return Player(dictionary=player_dictionary)
+        return Player.from_dictionary(player_dictionary)
 
     def create_player(self, sender_id, name):
         """Creates a user with the given sender_id and given name"""

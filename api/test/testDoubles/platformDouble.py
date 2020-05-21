@@ -16,6 +16,7 @@ class PlatformDouble():
         self.player_by_email = player_by_email
         self.player_by_name = player_by_name
         self.teams = teams
+        self._games_to_submit_scores_for = []
 
     def set_mock_player(self, player_by_email=None, player_by_name=None):
         """Set the mock player the platform should return upon lookups"""

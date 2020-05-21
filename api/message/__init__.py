@@ -6,8 +6,8 @@
 @summary: Holds information and the message received by some sender
     Additionally holds some objects that are formatted upon sending a message
 '''
-from api.errors import OptionException, MessengerException
 from copy import deepcopy
+from api.errors import OptionException, MessengerException
 
 
 class DataFormatter():
@@ -153,7 +153,6 @@ class Message():
         Holds information about the message that was received from messenger
         or information to send back using a messenger.
     """
-
     def __init__(self,
                  sender_id,
                  recipient_id=None,
@@ -183,6 +182,7 @@ class Message():
 
     def __str__(self):
         """Returns string of the message"""
-        return "{}: {} from {}".format(self._sender_id,
-                                       self._message,
-                                       self._recipient_id)
+        seperator = "\n=============================\n"
+        header = f"\t\tMESSAGE{seperator}"
+        return (f"{header}{self._sender_id}:\n" +
+                f"\t{self._message} \nfrom {self._recipient_id}{seperator}")

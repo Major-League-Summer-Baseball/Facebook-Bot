@@ -5,8 +5,6 @@
 @project: Facebook Bot
 @summary: Holds a list of errors that could occur
 '''
-
-
 PLATFORMMESSAGE = "Issue when communicating with website: {}"
 
 

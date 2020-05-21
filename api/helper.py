@@ -110,7 +110,7 @@ def random_compliment():
 def loads(data):
     try:
         data = loader(data)
-    except Exception as e:
+    except Exception:
         data = loader(data.decode('utf-8'))
     return data
 

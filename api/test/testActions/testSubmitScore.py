@@ -5,111 +5,281 @@
 @project: Facebook Bot
 @summary: Test Submit Score Action
 '''
-from api.actions.submit_score import SubmitScore
-from api.helper import get_this_year
-from api.message import Message
+from typing import List, Tuple
+from api.actions.action.submit_score import SubmitScore, SubmitScoreByButtons,\
+                                            SubmitScoreByText
+from api.message import Message, Option, Payload
 from api.players.player import Player
 from api.test.testActions import TestActionBase
-from api.settings.action_keys import SUBMIT_SCORE_KEY, HOME_KEY
-from api.test.testDoubles.noAction import Nop
-from api.settings.message_strings import NOT_CAPTAIN_COMMENT
+from api.actions import ActionKey
+from api.helper import get_this_year
+from api.settings.message_strings import ScoreSubmission, MainMenu
+import unittest
 
 
 class TestSubmitScore(TestActionBase):
     TEST_PLAYER_ID = 1
-    TEST_PLAYER_NAME = "Submit Score Test Player Name"
-    TEST_TEAM_ID_ONE = 1
-    TEST_TEAM_NAME_ONE = "Test Team One"
+    TEST_PLAYER_NAME = "Submit score test player name"
+    TEST_TEAM_ID = 1
+    TEST_TEAM_NAME = "Test team"
     TEST_SENDER_ID = "submit_score_test_sender_id"
 
     def setUp(self):
-        self.action_map = {HOME_KEY: Nop, SUBMIT_SCORE_KEY: Nop}
         super(TestSubmitScore, self).setUp()
         self.action = self.create_action(SubmitScore)
+        self.player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
+                             name=TestSubmitScore.TEST_PLAYER_NAME)
+        player_info = {"player_id": TestSubmitScore.TEST_PLAYER_ID}
+        self.player.set_player_info(player_info)
 
-        MOCK_GAME_ONE = {"game_id": 1,
-                         "home_team_id": 1,
-                         "home_team": "Test Team 2",
-                         "away_team_id": 2,
-                         "away_team": "Amsterdam Brewery Blue",
-                         "league_id": 1,
-                         "date": "2019-06-03",
-                         "time": "10:00",
-                         "status": "To Be Played",
-                         "field": "WP1"}
+    def mockTeams(self, players: List[Player] = [],
+                  number_of_teams: int = 1) -> Tuple[dict, dict]:
+        """Mock a number of given teams with the given list of players.
 
-    def background_setup(self, captain=False, convenor=False):
+        Args:
+            players (List[Player], optional): players making roster.
+                                              Defaults to [].
+            number_of_teams (int, optional): the number of teams to mock.
+                                             Defaults to 1.
+
+        Returns:
+            Tuple[dict, dict]: a list of teams and their team rosters
         """
-            Setups some backgorund such as the player and his teams
-            Returns:
-                test_teams: an arrays of teams the player is part of
+        test_teams = []
+        team_rosters = {}
+        if len(players) > 0:
+            captain = players[0].get_player_info()
+        else:
+            captain = self.random_player()
+        for i in range(0, number_of_teams):
+            test_team = {"year": get_this_year(),
+                         "team_name": TestSubmitScore.TEST_TEAM_NAME + str(i),
+                         "team_id": TestSubmitScore.TEST_TEAM_ID + i,
+                         "players": players,
+                         "captain": captain,
+                         }
+            test_teams.append(test_team)
+            team_rosters[str(TestSubmitScore.TEST_TEAM_ID + i)] = test_team
+        return (test_teams, team_rosters)
+
+    def makePlayerCaptainOfTeams(self, player: Player,
+                                 number_of_teams: int = 1) -> List[dict]:
+        """Make the given player a captain of newly created team.
+
+        Args:
+            player (Player): the player to make captain
+            number_of_teams (int): the number of teams to make
+        Returns:
+            List[dict]: a list containing the new teams
         """
-        player_info = self.random_player()
-        team_one = self.random_team(captain_id=player_info.get("player_id"))
-        test_teams = [team_one]
-
-        player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
-                        name=TestSubmitScore.TEST_PLAYER_NAME)
-        if captain:
-            player.make_captain({"team_id": TestSubmitScore.TEST_TEAM_ID})
-        if convenor:
-            player.make_convenor()
-
-        player.set_player_info({"player_id": TestSubmitScore.TEST_PLAYER_ID})
-        self.db.set_player(player)
+        (test_teams,
+         team_rosters) = self.mockTeams(players=[player],
+                                        number_of_teams=number_of_teams)
+        for team in test_teams:
+            player.make_captain({"team_id": team.get("team_id")})
+        self.db.set_player(self.player)
         self.platform.set_mock_teams(teams=test_teams)
+        self.platform.set_mock_team_roster(team_rosters)
         return test_teams
 
-    def testNotCaptainMessage(self):
-        """
-            Test getting a message from just a player (not convenor or captain)
-        """
-        self.background_setup()
+    def testPosingAsCaptain(self):
+        """Test someone posing as a captain/convenor"""
+        all_states = (SubmitScore.LIST_OF_STATES +
+                      SubmitScoreByText.LIST_OF_STATES +
+                      SubmitScoreByButtons.LIST_OF_STATES)
+        for state in all_states:
+            # should not matter regardless of state
+            self.player.set_action_state(
+                self.player.get_action_state().set_state(state))
+            message = Message(TestSubmitScore.TEST_SENDER_ID,
+                              message=MainMenu.SUBMIT_SCORE_TITLE.value)
+            (_, messages, next_action) = self.action.process(self.player,
+                                                             message)
+            self.assertEquals(len(messages), 1)
+            self.assertEquals(messages[0].get_message(),
+                              ScoreSubmission.NOT_CAPTAIN.value)
+            self.assertEquals(next_action, ActionKey.HOME_KEY)
 
-        # process the action
-        message = Message(TestSubmitScore.TEST_SENDER_ID, message="")
-        self.action.process(message, self.action_map)
+    def testCaptainCancelProcess(self):
+        """Test a captain cancelling submission."""
+        # make the player a captain
+        self.makePlayerCaptainOfTeams(self.player)
+        test_states = [SubmitScore.DETERMINE_WHICH_GAME_STATE,
+                       SubmitScore.DETERMINE_WHICH_TEAM_STATE]
+        normal_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message=ScoreSubmission.CANCEL.value)
+        cancel_option = Payload(options=[Option(ScoreSubmission.CANCEL.value,
+                                                ScoreSubmission.CANCEL.value)])
+        button_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message="",
+                                 payload=cancel_option)
+        for state in test_states:
+            # set the action state
+            self.player.set_action_state(
+                self.player.get_action_state().set_state(state))
 
-        # check got a not captain message
-        messages = self.messenger.get_messages()
-        self.assertEqual(len(messages), 1)
-        self.assertTrue(messages[0].get_message() is not None)
-        self.assertTrue(messages[0].get_sender_id,
-                        TestSubmitScore.TEST_SENDER_ID)
-        self.assertTrue(NOT_CAPTAIN_COMMENT in messages[0].get_message())
+            # user types out cancel
+            (_, messages, next_action) = self.action.process(self.player,
+                                                             normal_message)
+            for message in messages:
+                print(message)
+            self.assertEquals(len(messages), 0)
+            self.assertEquals(next_action, ActionKey.HOME_KEY)
 
-        # make sure they got sent back to homescreen
-        player = self.db.inspect_saved_player()
-        self.assertTrue(player.get_action_state() is not None)
-        self.assertEqual(player.get_action_state().get_id(), HOME_KEY)
+            # user clicks on the button
+            (_, messages, next_action) = self.action.process(self.player,
+                                                             button_message)
+            self.assertEquals(len(messages), 0)
+            self.assertEquals(next_action, ActionKey.HOME_KEY)
 
-    def testCaptainOneTeamFirstMessage(self):
-        """
-            Test getting a message from a normal captain (just one team)
-        """
-        self.background_setup(captain=True)
+    def testCaptainWithNoGamesToSubmitFor(self):
+        """Test a captain trying to submit but has no game"""
+        # captain is player of one team
+        self.makePlayerCaptainOfTeams(self.player)
 
-        # stub some of the platform responses
-        mock_team_roster = {"player_id": TestSubmitScore.TEST_PLAYER_ID,
-                            "player_name": TestSubmitScore.TEST_PLAYER_NAME}
-        self.platform.set_mock_team_roster(mock_team_roster)
-        mock_games = [{"game_id": 1}]
-        # process the action
-        message = Message(TestSubmitScore.TEST_SENDER_ID, message="")
-        self.action.process(message, self.action_map)
+        # there are no games to submit for
+        self.platform.set_mock_games_to_submit_scores_for([])
 
-        # check got a not captain message
-        messages = self.messenger.get_messages()
-        self.assertEqual(len(messages), 1)
-        self.assertTrue(messages[0].get_message() is not None)
-        self.assertTrue(messages[0].get_sender_id,
-                        TestSubmitScore.TEST_SENDER_ID)
-        self.assertTrue(NOT_CAPTAIN_COMMENT in messages[0].get_message())
+        # first message received - should be sent back to home screen
+        message = Message(TestSubmitScore.TEST_SENDER_ID,
+                          message="")
+        (_, messages, next_action) = self.action.process(self.player, message)
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.NO_GAMES.value)
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
 
-        # make sure they got sent back to homescreen
-        player = self.db.inspect_saved_player()
-        self.assertTrue(player.get_action_state() is not None)
-        self.assertEqual(player.get_action_state().get_id(), SUBMIT_SCORE_KEY)
+    def testCaptainWithOneTeam(self):
+        """Test a captain with one team going throught whole process."""
+        # captain is player of one team
+        team = self.makePlayerCaptainOfTeams(self.player)[0]
+        other_team = self.random_team()
+        # there is one game to submit
+        game = self.random_game(team, other_team)
+        self.platform.set_mock_games_to_submit_scores_for([game])
 
-    def testConvenorFirstMessage(self):
-        pass
+        message = Message(TestSubmitScore.TEST_SENDER_ID,
+                          message="")
+        (_, messages, next_action) = self.action.process(self.player, message)
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SELECT_GAME.value)
+        self.assertIsNone(next_action)
+
+        # pick the game we want to submit for
+        game_option = Payload(options=[Option(game.get("game_id"),
+                                              str(game.get("game_id")))])
+        game_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message="",
+                               payload=game_option)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              game_message)
+        self.assertIsNone(next_action)
+
+        # player should now be onto submitting game score by what ever method
+        expect_states = (SubmitScoreByText.LIST_OF_STATES +
+                         SubmitScoreByButtons.LIST_OF_STATES)
+        self.assertTrue(player.get_action_state().get_state() in expect_states)
+
+    def testCaptainWithMultipleTeams(self):
+        """Test a captain with multiple teams to submit for."""
+        # captain is player of two team
+        team = self.makePlayerCaptainOfTeams(self.player, number_of_teams=2)[0]
+        other_team = self.random_team()
+
+        # there is one game to submit
+        game = self.random_game(team, other_team)
+        self.platform.set_mock_games_to_submit_scores_for([game])
+
+        # process the first message - expect message asking for team
+        message = Message(TestSubmitScore.TEST_SENDER_ID,
+                          message="")
+        (_, messages, next_action) = self.action.process(self.player, message)
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SELECT_TEAM.value)
+        self.assertIsNone(next_action)
+
+        # pick the team we want to submit for
+        team_option = Payload(options=[Option(team.get("team_id"),
+                                              str(team.get("team_id")))])
+        team_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message="",
+                               payload=team_option)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              team_message)
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SELECT_GAME.value)
+        self.assertIsNone(next_action)
+
+        # pick the game we want to submit for
+        game_option = Payload(options=[Option(game.get("game_id"),
+                                              str(game.get("game_id")))])
+        game_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message="",
+                               payload=game_option)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              game_message)
+        self.assertIsNone(next_action)
+
+        # player should now be onto submitting game score by what ever method
+        expect_states = (SubmitScoreByText.LIST_OF_STATES +
+                         SubmitScoreByButtons.LIST_OF_STATES)
+        self.assertTrue(player.get_action_state().get_state() in expect_states)
+
+    def testConvenorSubmittingScore(self):
+        """Test a convenor submitting for some team."""
+        # player is a convenor
+        self.player.make_convenor()
+        (test_teams,
+         team_rosters) = self.mockTeams(number_of_teams=4)
+        team = test_teams[0]
+        other_team = test_teams[1]
+        # there is one game to submit
+        game = self.random_game(team, other_team)
+        self.platform.set_mock_team_roster(team_rosters)
+        self.platform.set_mock_teams(teams=test_teams)
+        self.platform.set_mock_games_to_submit_scores_for([game])
+
+        # process the first message - expect message asking for team
+        message = Message(TestSubmitScore.TEST_SENDER_ID,
+                          message="")
+        (_, messages, next_action) = self.action.process(self.player, message)
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SELECT_TEAM.value)
+        self.assertIsNone(next_action)
+
+        # pick the team we want to submit for
+        team_option = Payload(options=[Option(team.get("team_id"),
+                                              str(team.get("team_id")))])
+        team_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message="",
+                               payload=team_option)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              team_message)
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SELECT_GAME.value)
+        self.assertIsNone(next_action)
+
+        # pick the game we want to submit for
+        game_option = Payload(options=[Option(game.get("game_id"),
+                                              str(game.get("game_id")))])
+        game_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message="",
+                               payload=game_option)
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              game_message)
+        self.assertIsNone(next_action)
+
+        # player should now be onto submitting game score by what ever method
+        expect_states = (SubmitScoreByText.LIST_OF_STATES +
+                         SubmitScoreByButtons.LIST_OF_STATES)
+        self.assertTrue(player.get_action_state().get_state() in expect_states)
+
+
+if __name__ == "__main__":
+    # import sys;sys.argv = ['', 'Test.testName']
+    unittest.main()

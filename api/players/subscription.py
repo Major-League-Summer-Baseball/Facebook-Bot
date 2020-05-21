@@ -30,34 +30,36 @@ class Subscription():
     MORNING_HOUR = 8
     NIGHT_BEFORE_HOUR = 8
 
-    def __init__(self, dictionary=None):
+    def __init__(self):
         """Constructor"""
         # default to reminding before
         self.time = None
         self.subscribed = True
         self.relative_time = RelativeTimeEnum.MORNING
-        if dictionary is not None:
-            # if given a dictionary loads what values are in the dictionary
-            self.from_dictionary(dictionary)
 
-    def from_dictionary(self, dictionary):
-        """Sets the properties from a given dictionary"""
+    @staticmethod
+    def from_dictionary(dictionary: dict) -> 'Subscription':
+        """Parses a subscription from a dictionary"""
+        subscription = Subscription()
         if Subscription.SUBCRIBED_KEY in dictionary.keys():
-            self.subscribed = (dictionary[Subscription.SUBCRIBED_KEY]
-                               in TRUTHINESS)
+            subscription.subscribed = (dictionary[Subscription.SUBCRIBED_KEY]
+                                       in TRUTHINESS)
         else:
             # can assume not subscribed
-            self.subscribed = False
+            subscription.subscribed = False
         if Subscription.TIME_KEY in dictionary.keys():
             value = dictionary[Subscription.TIME_KEY]
-            self.time = datetime.datetime.strptime(value, "%H:%M").time()
+            subscription.time = datetime.datetime.strptime(value,
+                                                           "%H:%M").time()
         else:
-            self.time = None
+            subscription.time = None
         if Subscription.RELATIVE_TIME_KEY in dictionary.keys():
-            self.relative_time = RelativeTimeEnum(
+            subscription.relative_time = RelativeTimeEnum(
                 dictionary[Subscription.RELATIVE_TIME_KEY])
         else:
-            self.relative_time = None
+            subscription.relative_time = None
+
+        return subscription
 
     def to_dictionary(self):
         """Returns a dictionary representation of the object"""
@@ -152,24 +154,27 @@ class Subscriptions():
     to league updates as well
     """
 
-    def __init__(self, dictionary=None):
+    def __init__(self):
         """Constructor"""
         self.league = True
         self.team_lookup = {}
-        if dictionary is not None:
-            # if given a dictionary loads what values are in the dictionary
-            self.from_dictionary(dictionary)
 
-    def from_dictionary(self, dictionary):
-        """Sets the properties from a given dictionary"""
-        self.team_lookup = {}
+    @staticmethod
+    def from_dictionary(dictionary: dict) -> 'Subscriptions':
+        """Returns subscriptions parsed from a dictionary"""
+        subscriptions = Subscriptions()
+        team_lookup = {}
+        league = True
         for key, value in dictionary.items():
             if "league" in key.lower():
-                self.league = value in TRUTHINESS
+                league = value in TRUTHINESS
             else:
                 if isinstance(value, Subscription):
                     value = value.to_dictionary()
-                self.team_lookup[key] = Subscription(dictionary=value)
+                team_lookup[key] = Subscription.from_dictionary(value)
+        subscriptions.league = league
+        subscriptions.team_lookup = team_lookup
+        return subscriptions
 
     def to_dictionary(self):
         """Returns the dictionary representation of the subscription"""

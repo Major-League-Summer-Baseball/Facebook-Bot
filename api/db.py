@@ -143,7 +143,7 @@ def update_player(user, player):
     captain = -1
     teams = r.json()
     for team in teams:
-        if (team['captain'] != None and
+        if (team['captain'] is not None and
                 team['captain']['player_id'] == user['pid']):
             captain = team["team_id"]
     user['captain'] = captain
@@ -545,7 +545,7 @@ class TestRequests(unittest.TestCase):
                          }
             games = get_games(self.user)
             self.assertEqual(False, True, "Should raise not a captain")
-        except NotCaptainException as e:
+        except NotCaptainException:
             pass
 
     def testUpdatePlayer(self):
@@ -657,7 +657,7 @@ class TestRequests(unittest.TestCase):
         try:
             user = lookup_player_email(self.user, "WHOTHEFUCK@mlsb.ca")
             self.assertEqual(True, False, "Should raise exception")
-        except IdentityException as __:
+        except IdentityException:
             pass
 
     def testGetEvents(self):

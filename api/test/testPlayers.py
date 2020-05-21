@@ -7,8 +7,7 @@
 '''
 from api.players.subscription import Subscriptions
 from api.players.player import Player
-from api.actions import ActionState
-from api.settings.action_keys import IDENTIFY_KEY
+from api.actions import ActionState, ActionKey
 import unittest
 
 
@@ -33,7 +32,7 @@ class TestPlayer(unittest.TestCase):
         test_captain = [1]
         test_subscription = Subscriptions()
         test_subscription.subscribe_to_team(1)
-        test_action_state = ActionState(key=IDENTIFY_KEY)
+        test_action_state = ActionState(key=ActionKey.IDENTIFY_KEY)
         test = {"messenger_name": test_name,
                 "messenger_id": test_id,
                 "player_info": test_player_info,
@@ -44,7 +43,7 @@ class TestPlayer(unittest.TestCase):
                 }
 
         # create the player from a dictionary
-        player = Player(dictionary=test)
+        player = Player.from_dictionary(test)
         player_dict = player.to_dictionary()
         self.assertEqual(test["messenger_name"],
                          player_dict["messenger_name"])

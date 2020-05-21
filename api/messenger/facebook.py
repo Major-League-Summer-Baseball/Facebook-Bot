@@ -13,8 +13,8 @@ from api.messenger import Messenger
 from api.errors import UnableToLookupUserInformation, UnableToSendMessage,\
     UnableToFindSender
 from api.messenger.user import User
-from api.variables import NO_OPTIONS_AVAILABLE, SCROLL_FOR_MORE_OPTIONS,\
-    EVEN_MORE_OPTIONS, PAGE_ACCESS_TOKEN
+from api.settings.message_strings import Facebook
+from api.variables import PAGE_ACCESS_TOKEN
 
 
 class FacebookMessenger(Messenger):
@@ -99,22 +99,20 @@ class FacebookMessenger(Messenger):
         # assume both the payload and message text are None
         payload = None
         message_text = None
-        if response.get("postback"):
-            if "postback" in response.keys():
-                if "payload" in response["postback"]:
-                    temp = response["postback"]
-                    data = StringFormatter(temp.get("payload", None))
-                    option = Option(temp.get("title", None), data)
-                    payload = Payload(payload_type=Payload.BUTTON_TYPE,
-                                      options=[option])
-        elif response.get("message"):
-            if "message" in response.keys():
-                if "text" in response["message"].keys():
-                    message_text = response["message"]["text"]
-                if "quick_reply" in response["message"].keys():
-                    if "payload" in response["message"]["quick_reply"].keys():
-                        quick_reply = response['message']['quick_reply']
-                        message_text = quick_reply['payload']
+        if "postback" in response.keys():
+            if "payload" in response["postback"].keys():
+                temp = response["postback"]
+                data = StringFormatter(temp.get("payload", None))
+                option = Option(temp.get("title", None), data)
+                payload = Payload(payload_type=Payload.BUTTON_TYPE,
+                                  options=[option])
+        elif "message" in response.keys():
+            if "text" in response["message"].keys():
+                message_text = response["message"]["text"]
+            if "quick_reply" in response["message"].keys():
+                if "payload" in response["message"]["quick_reply"].keys():
+                    quick_reply = response['message']['quick_reply']
+                    message_text = quick_reply['payload']
 
         if response.get("recipient"):
             recipient_id = response["recipient"]["id"]
@@ -155,7 +153,7 @@ class FacebookMessenger(Messenger):
         buttons = message.get_payload().get_payload_response()
         if len(buttons) <= 0:
             self._send_message(message.get_message() +
-                               " \n " + NO_OPTIONS_AVAILABLE)
+                               " \n " + Facebook.NO_OPTIONS_AVAILABLE)
         elif len(buttons) <= 3:
             data = {"recipient": {
                 "id": message.get_sender_id()},
@@ -179,13 +177,14 @@ class FacebookMessenger(Messenger):
             m1 = Message(message.get_sender_id(),
                          message=message.get_message(), payload=buttons[0:29])
             m2 = Message(message.get_sender_id(),
-                         message=EVEN_MORE_OPTIONS, payload=buttons[29:])
+                         message=Facebook.EVEN_MORE_OPTIONS,
+                         payload=buttons[29:])
             self._send_buttons(m1)
             self._send_buttons(m2)
 
     def _send_buttons_aux(self, sender_id, message, buttons):
 
-        message_text = SCROLL_FOR_MORE_OPTIONS
+        message_text = Facebook.SCROLL_FOR_MORE_OPTIONS
         if message is not None:
             message_text += " \n " + message.get_message()
         elements = [

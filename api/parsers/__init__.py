@@ -51,7 +51,7 @@ class Parser():
 
     def get_tokens(self, text):
         """Returns a list of tokens"""
-        text.replace(" ", "\s").lower()
+        text.replace(" ", r"\s").lower()
         return re.split(r';|,\s', text)
 
 

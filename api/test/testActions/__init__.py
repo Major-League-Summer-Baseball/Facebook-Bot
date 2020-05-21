@@ -10,7 +10,7 @@ from api.test.testDoubles.databaseDouble import DatabaseDouble
 from api.test.testDoubles.platformDouble import PlatformDouble
 from api.helper import get_this_year
 from random import randint, choice
-from datetime import datetime
+from datetime import datetime, timedelta
 import unittest
 import string
 
@@ -30,17 +30,17 @@ class TestActionBase(unittest.TestCase):
     def create_action(self, action_class):
         """Will commonly need to create actions"""
         return action_class(self.db,
-                            self.platform,
-                            self.messenger)
+                            self.platform)
 
-    def random_player(self):
+    def random_player(self) -> dict:
         """Return a random player"""
         return {"player_id": self.random_id(),
                 "player_name": self.random_string(),
                 "gender": self.random_gender(),
                 "active": True}
 
-    def random_team(self, captain=None, year=get_this_year()):
+    def random_team(self, captain: dict = None,
+                    year: int = get_this_year()) -> dict:
         """Return a random team
 
         Parameters:
@@ -56,7 +56,8 @@ class TestActionBase(unittest.TestCase):
                 "year": year,
                 "espys": self.random_number()}
 
-    def random_game(self, team_one, team_two, date=None):
+    def random_game(self, team_one: dict, team_two: dict,
+                    date: datetime = None) -> dict:
         """Return a random game between the two teams"""
         return {"home_team": team_one.get("team_name", self.random_string()),
                 "home_team_id": team_one.get("team_id", self.random_id()),
@@ -69,7 +70,7 @@ class TestActionBase(unittest.TestCase):
                 "status": self.random_string(),
                 "field": "WP1"}
 
-    def random_roster(self, team, captain=None):
+    def random_roster(self, team: int, captain: bool = None) -> dict:
         """Return a random roster"""
         captain = captain if captain is not None else self.random_player()
         players = [captain]
@@ -77,15 +78,15 @@ class TestActionBase(unittest.TestCase):
             players.append(self.random_player())
         return {"team_id": team, "captain": captain, "players": players}
 
-    def random_date(self):
+    def random_date(self) -> datetime:
         return (datetime.today() +
-                datetime.timedelta(days=randint(-10, 10))).strftime("%Y-%m-%d")
+                timedelta(days=randint(-10, 10))).strftime("%Y-%m-%d")
 
-    def random_gender(self):
+    def random_gender(self) -> str:
         """Returns a random gender"""
         return "m" if randint(0, 1) == 0 else "f"
 
-    def random_id(self):
+    def random_id(self) -> int:
         """Returns a random id"""
         i = randint(0, TestActionBase.RANDOM_ID_UPPER_RANGE)
         while i in self.random_ids:
@@ -93,11 +94,15 @@ class TestActionBase(unittest.TestCase):
         self.random_ids.append(i)
         return i
 
-    def random_number(self):
+    def random_number(self) -> int:
         """Returns a random number"""
         return randint(0, TestActionBase.RANDOM_ESPY_RANGE)
 
-    def random_string(self, stringLength=10):
+    def random_string(self, stringLength: int = 10) -> str:
         """Returns a random string"""
         letters = string.ascii_lowercase
         return ''.join(choice(letters) for i in range(stringLength))
+
+    def random_email(self) -> str:
+        """Returns a random email"""
+        return f"{self.random_string()}@mlsb.ca"
