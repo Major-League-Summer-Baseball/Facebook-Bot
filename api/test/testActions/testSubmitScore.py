@@ -8,6 +8,7 @@
 from typing import List, Tuple
 from api.actions.action.submit_score import SubmitScore, SubmitScoreByButtons,\
                                             SubmitScoreByText
+
 from api.message import Message, Option, Payload
 from api.players.player import Player
 from api.test.testActions import TestActionBase
@@ -15,6 +16,52 @@ from api.actions import ActionKey
 from api.helper import get_this_year
 from api.settings.message_strings import ScoreSubmission, MainMenu
 import unittest
+
+
+SS = "ss"
+HR = "hr"
+TEAM_NAME = "team_name"
+TEAM_ID = "team_id"
+TEAM_ROSTER = "teamroster"
+TEAM_LOOKUP = "team_lookup"
+COLOR = "color"
+CAPTAIN = "captain"
+CAPTAIN_ID = "captain_id"
+PLAYER_NAME = "player_name"
+PLAYER_ID = "player_id"
+GAMES = "games"
+GAME_ID = "game_id"
+GAME_SHEET = "game_sheet"
+SCORE = "score"
+BATTER_ID = "batter_id"
+
+INITIAL_STATE = SubmitScoreByButtons.INITIAL_STATE
+
+
+def setSubmitScoreBackground(player: Player, teamroster: List[Player],
+                             game: dict,
+                             state: str = INITIAL_STATE) -> Player:
+    """Set the background of the given player
+
+    Args:
+        player (Player): the player submitting the score
+        teamroster (List[Player]): a list of players on the roster
+        game (dict): the game the player is submitting for
+        state (str): the action state to set player as
+
+    Returns:
+        Player: the player with their background set
+    """
+    action_state = player.get_action_state()
+    data = action_state.get_data()
+    data[GAMES] = [game]
+    data[GAME_ID] = game.get(GAME_ID)
+    data[TEAM_ROSTER] = teamroster
+    data[CAPTAIN] = player.get_player_info()
+    action_state.set_data(data)
+    action_state.set_state(state)
+    player.set_action_state(action_state)
+    return player
 
 
 class TestSubmitScore(TestActionBase):
@@ -29,7 +76,7 @@ class TestSubmitScore(TestActionBase):
         self.action = self.create_action(SubmitScore)
         self.player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
                              name=TestSubmitScore.TEST_PLAYER_NAME)
-        player_info = {"player_id": TestSubmitScore.TEST_PLAYER_ID}
+        player_info = {PLAYER_ID: TestSubmitScore.TEST_PLAYER_ID}
         self.player.set_player_info(player_info)
 
     def mockTeams(self, players: List[Player] = [],
@@ -76,7 +123,7 @@ class TestSubmitScore(TestActionBase):
          team_rosters) = self.mockTeams(players=[player],
                                         number_of_teams=number_of_teams)
         for team in test_teams:
-            player.make_captain({"team_id": team.get("team_id")})
+            player.make_captain({TEAM_ID: team.get(TEAM_ID)})
         self.db.set_player(self.player)
         self.platform.set_mock_teams(teams=test_teams)
         self.platform.set_mock_team_roster(team_rosters)
@@ -176,10 +223,23 @@ class TestSubmitScore(TestActionBase):
                                                               game_message)
         self.assertIsNone(next_action)
 
-        # player should now be onto submitting game score by what ever method
-        expect_states = (SubmitScoreByText.LIST_OF_STATES +
-                         SubmitScoreByButtons.LIST_OF_STATES)
-        self.assertTrue(player.get_action_state().get_state() in expect_states)
+        # player should now be asked which method to use
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(player.get_action_state().get_state(),
+                          SubmitScore.DETERMINE_WHICH_METHOD_STATE)
+        self.assertIsNone(next_action)
+
+        # now pick a method - using text
+        text_option = Option(ScoreSubmission.TEXT_METHOD.value,
+                             str(ScoreSubmission.TEXT_METHOD.value))
+        method_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message="",
+                                 payload=Payload(options=[text_option]))
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              method_message)
+        self.assertEquals(player.get_action_state().get_state(),
+                          SubmitScoreByText.INITIAL_STATE)
+        self.assertIsNone(next_action)
 
     def testCaptainWithMultipleTeams(self):
         """Test a captain with multiple teams to submit for."""
@@ -223,10 +283,23 @@ class TestSubmitScore(TestActionBase):
                                                               game_message)
         self.assertIsNone(next_action)
 
-        # player should now be onto submitting game score by what ever method
-        expect_states = (SubmitScoreByText.LIST_OF_STATES +
-                         SubmitScoreByButtons.LIST_OF_STATES)
-        self.assertTrue(player.get_action_state().get_state() in expect_states)
+        # player should now be asked which method to use
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(player.get_action_state().get_state(),
+                          SubmitScore.DETERMINE_WHICH_METHOD_STATE)
+        self.assertIsNone(next_action)
+
+        # now pick a method - using text
+        text_option = Option(ScoreSubmission.TEXT_METHOD.value,
+                             str(ScoreSubmission.TEXT_METHOD.value))
+        method_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message="",
+                                 payload=Payload(options=[text_option]))
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              method_message)
+        self.assertEquals(player.get_action_state().get_state(),
+                          SubmitScoreByText.INITIAL_STATE)
+        self.assertIsNone(next_action)
 
     def testConvenorSubmittingScore(self):
         """Test a convenor submitting for some team."""
@@ -272,12 +345,572 @@ class TestSubmitScore(TestActionBase):
                                payload=game_option)
         (player, messages, next_action) = self.action.process(self.player,
                                                               game_message)
+
+        # player should now be asked which method to use
+        self.assertEquals(len(messages), 1)
+        self.assertEquals(player.get_action_state().get_state(),
+                          SubmitScore.DETERMINE_WHICH_METHOD_STATE)
         self.assertIsNone(next_action)
 
-        # player should now be onto submitting game score by what ever method
-        expect_states = (SubmitScoreByText.LIST_OF_STATES +
-                         SubmitScoreByButtons.LIST_OF_STATES)
-        self.assertTrue(player.get_action_state().get_state() in expect_states)
+        # now pick a method - using buttons
+        text_option = Option(ScoreSubmission.BUTTON_METHOD.value,
+                             str(ScoreSubmission.BUTTON_METHOD.value))
+        method_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message="",
+                                 payload=Payload(options=[text_option]))
+        (player, messages, next_action) = self.action.process(self.player,
+                                                              method_message)
+        self.assertEquals(player.get_action_state().get_state(),
+                          SubmitScoreByButtons.DETERMINE_SCORE_STATE)
+        self.assertIsNone(next_action)
+
+
+class TestSubmitScoreByButtons(TestActionBase):
+    TEST_PLAYER_ID = 1
+    TEST_PLAYER_NAME = "Submit score test player name"
+    TEST_TEAM_ID = 1
+    TEST_TEAM_NAME = "Test team"
+    TEST_SENDER_ID = "submit_score_test_sender_id"
+
+    def setUp(self):
+        super(TestSubmitScoreByButtons, self).setUp()
+        # initialize tha ction
+        self.action = self.create_action(SubmitScore)
+
+        # setup the player who is the captain who is submitting the score
+        self.player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
+                             name=TestSubmitScore.TEST_PLAYER_NAME)
+        player_info = self.random_player(gender="M")
+        player_info[PLAYER_ID] = TestSubmitScore.TEST_PLAYER_ID
+        self.player.set_player_info(player_info)
+
+        # setup their background for the game they are submitting for
+        self.roster = [self.random_player(gender="F"),
+                       self.random_player(gender="M"),
+                       player_info]
+        self.my_team = self.random_team(captain=player_info)
+        self.player.make_captain(self.my_team)
+        self.other_team = self.random_team()
+        self.game = self.random_game(self.my_team, self.other_team)
+        self.player = setSubmitScoreBackground(
+            self.player,
+            self.roster,
+            self.game,
+            SubmitScoreByButtons.INITIAL_STATE)
+
+    def initial_message(self, player: Player,
+                        use_payload: bool = False) -> Player:
+        """ Send an inital message"""
+        # send initial message
+        if use_payload:
+            text_option = Option(ScoreSubmission.BUTTON_METHOD.value,
+                                 str(ScoreSubmission.BUTTON_METHOD.value))
+            method_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                     message="",
+                                     payload=Payload(options=[text_option]))
+        else:
+            m = ScoreSubmission.BUTTON_METHOD.value
+            method_message = Message(TestSubmitScore.TEST_SENDER_ID, message=m)
+        (player, messages,
+            next_action) = self.action.process(player, method_message)
+
+        # get asked for score
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.ASK_FOR_SCORE.value)
+        return player
+
+    def send_score(self, player: Player, score: str,
+                   use_payload: bool = False) -> Player:
+        """Send the score"""
+        # send message with score
+        if use_payload:
+            score_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                    message=None,
+                                    payload=Payload(options=[Option(score,
+                                                                    score)]))
+        else:
+            score_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                    message=f"we had {score} runs")
+        (player, messages,
+            next_action) = self.action.process(player, score_message)
+
+        # now asked about HR
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.HR_SELECT_PLAYER.value)
+        return player
+
+    def pick_batter(self, player: Player, batter: dict, hits: str,
+                    use_payload: bool = False) -> Player:
+        """Pick a batter and specify their number of hits"""
+        ss_state = SubmitScoreByButtons.DETERMINE_SS_BATTER_STATE
+        category = (SS
+                    if player.get_action_state().get_state() == ss_state
+                    else HR)
+        # pick the batter
+        if use_payload:
+            batter_option = Payload(options=[Option(batter.get("player_name"),
+                                             str(batter.get("player_id")))])
+            batter_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                     payload=batter_option)
+        else:
+            batter_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                     message=batter.get("player_name"))
+        (player, messages,
+            next_action) = self.action.process(player, batter_message)
+
+        # now ask for how many
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        expected_message = ScoreSubmission.HOW_HITS_PLAYER.value.format(
+            batter.get("player_name"))
+        self.assertEquals(expected_message, messages[0].get_message())
+
+        if use_payload:
+            hit = Payload(options=[Option(hits, hits)])
+            hit_message = Message(TestSubmitScore.TEST_SENDER_ID, payload=hit)
+        else:
+            hit_message = Message(TestSubmitScore.TEST_SENDER_ID, message=hits)
+        (player, messages,
+            next_action) = self.action.process(player, hit_message)
+
+        # back to picking batter
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        expected_message = (ScoreSubmission.SS_SELECT_PLAYER.value
+                            if category == SS
+                            else ScoreSubmission.HR_SELECT_PLAYER.value)
+        self.assertEquals(expected_message, messages[0].get_message())
+        return player
+
+    def get_to_submit_review(self, score: str,
+                             hrs: List[Tuple[dict, str]],
+                             ss: List[Tuple[dict, str]],
+                             use_payload: bool = False) -> Player:
+        """Send messages to get to the review screen"""
+        player = self.initial_message(self.player, use_payload=use_payload)
+        player = self.send_score(player, score, use_payload=use_payload)
+
+        # submit the number of homeruns
+        for (batter, hits) in hrs:
+            player = self.pick_batter(player, batter, hits,
+                                      use_payload=use_payload)
+
+        # say done to submitting homeruns
+        if use_payload:
+            done_option = Option(ScoreSubmission.DONE.value,
+                                 ScoreSubmission.DONE.value)
+            done_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                   message=None,
+                                   payload=Payload(options=[done_option]))
+        else:
+            done_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                   message=ScoreSubmission.DONE.value)
+        (player, messages,
+            next_action) = self.action.process(player, done_message)
+
+        # now asked about SS
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SS_SELECT_PLAYER.value)
+
+        # submit the number of ss
+        for (batter, hits) in ss:
+            player = self.pick_batter(player, batter, hits,
+                                      use_payload=use_payload)
+
+        # say done
+        (player, messages,
+            next_action) = self.action.process(player, done_message)
+
+        # now given summary
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertTrue(f"score: {score}" in messages[0].get_message().lower())
+        return player
+
+    def testSendingScoreAsWord(self):
+        """Test sending the score as a word"""
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+    def testHandleNoScore(self):
+        """Test able to ask for again if cant find one"""
+        player = self.initial_message(self.player)
+        unknown_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                  message="sorry what?")
+        (player, messages,
+            next_action) = self.action.process(player, unknown_message)
+
+        # asked again for the score
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.ASK_FOR_SCORE.value)
+
+    def testUnknownBatter(self):
+        """Test able to handle when given message with no batter information"""
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+        unknown_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                  message="sorry what?")
+        (player, messages,
+            next_action) = self.action.process(player, unknown_message)
+
+        # asked again for the score
+        self.assertIsNone(next_action)
+        self.assertEquals(2, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.UNRECOGNIZED_PLAYER.value)
+        self.assertEquals(messages[1].get_message(),
+                          ScoreSubmission.HR_SELECT_PLAYER.value)
+
+    def testAmbiguousBatter(self):
+        """Test able to handle when given message matches multiple players"""
+
+        # setup a situation where match to players
+        self.roster[0]['player_name'] = "Player One"
+        self.roster[1]['player_name'] = "Player Two"
+        self.player = setSubmitScoreBackground(
+            self.player,
+            self.roster,
+            self.game,
+            SubmitScoreByButtons.INITIAL_STATE)
+
+        # get to batter screen
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+        unknown_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                  message="Player")
+        (player, messages,
+            next_action) = self.action.process(player, unknown_message)
+
+        # asked again for batter
+        self.assertIsNone(next_action)
+        self.assertEquals(2, len(messages))
+        expected_message = ScoreSubmission.AMBIGUOUS_PLAYER.value.format(
+            "Player One and Player Two")
+        self.assertEquals(messages[0].get_message(), expected_message)
+        self.assertEquals(messages[1].get_message(),
+                          ScoreSubmission.HR_SELECT_PLAYER.value)
+
+    def testHrIneligiblePlayer(self):
+        """Test where the player is ineligible for the homeruns"""
+
+        # get to batter screen
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+        # already select a batter
+        player = self.pick_batter(player, self.roster[0], "1")
+
+        # not try them again
+        player.get_action_state().get_data().get(HR)
+        ineligible_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                     message=self.roster[0].get("player_name"))
+        (player, messages,
+            next_action) = self.action.process(player, ineligible_message)
+
+        # asked again for batter
+        self.assertIsNone(next_action)
+        self.assertEquals(2, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.PLAYER_NOT_ELIGIBLE.value)
+        self.assertEquals(messages[1].get_message(),
+                          ScoreSubmission.HR_SELECT_PLAYER.value)
+
+    def testSSIneligiblePlayer(self):
+        """Test where the player is ineligible for the ss"""
+
+        # get to batter screen
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+        # done with homeruns
+        done_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message=ScoreSubmission.DONE.value)
+        (player, messages,
+            next_action) = self.action.process(player, done_message)
+
+        # now asked about SS
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SS_SELECT_PLAYER.value)
+
+        # already select a batter
+        player = self.pick_batter(player, self.roster[0], "1")
+
+        # not try them again
+        player.get_action_state().get_data().get(HR)
+        ineligible_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                     message=self.roster[0].get("player_name"))
+        (player, messages,
+            next_action) = self.action.process(player, ineligible_message)
+
+        # asked again for batter
+        self.assertIsNone(next_action)
+        self.assertEquals(2, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.PLAYER_NOT_ELIGIBLE.value)
+        self.assertEquals(messages[1].get_message(),
+                          ScoreSubmission.SS_SELECT_PLAYER.value)
+
+    def testMaleNotEligibleForSS(self):
+        """Test males are not elgible for SS category"""
+        # get to batter screen
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+        # done with homeruns
+        done_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message=ScoreSubmission.DONE.value)
+        (player, messages,
+            next_action) = self.action.process(player, done_message)
+        # now asked about SS
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SS_SELECT_PLAYER.value)
+
+        # try submitting a male player
+        ineligible_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                     message=self.roster[1].get("player_name"))
+        (player, messages,
+            next_action) = self.action.process(player, ineligible_message)
+
+        # asked again for batter
+        self.assertIsNone(next_action)
+        self.assertEquals(2, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.PLAYER_NOT_ELIGIBLE.value)
+        self.assertEquals(messages[1].get_message(),
+                          ScoreSubmission.SS_SELECT_PLAYER.value)
+
+    def testHRLessThanRBI(self):
+        """Test that homeruns must be less than runs"""
+        # get to batter screen
+        score = 3
+        player = self.initial_message(self.player)
+        self.send_score(player, score)
+
+        batter_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message=self.roster[0].get("player_name"))
+        (player, messages,
+            next_action) = self.action.process(player, batter_message)
+
+        # now ask for how many
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        expected_message = ScoreSubmission.HOW_HITS_PLAYER.value.format(
+            self.roster[0].get("player_name"))
+        self.assertEquals(expected_message, messages[0].get_message())
+
+        # say too many with homeruns
+        too_many_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                   message=score + 3)
+        (player, messages,
+            next_action) = self.action.process(player, too_many_message)
+        # now asked about HR
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(), expected_message)
+
+    def testCancelBatterHRSelection(self):
+        """Test able to cancel picking number for batter"""
+        # get to batter screen
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+        # pick wrong batter
+        batter = self.roster[0]
+        wrong_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                message=batter.get("player_name"))
+        (player, messages,
+            next_action) = self.action.process(player, wrong_message)
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.HOW_HITS_PLAYER.value.format(
+                              batter.get("player_name")))
+
+        # cancel selection
+        cancel_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message=ScoreSubmission.CANCEL.value)
+        (player, messages,
+            next_action) = self.action.process(player, cancel_message)
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.HR_SELECT_PLAYER.value)
+
+        # cancel back to homepage
+        (player, messages,
+            next_action) = self.action.process(player, cancel_message)
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
+
+    def testCancelBatterSSSelection(self):
+        """Test able to cancel picking number for batter"""
+        # get to batter screen
+        player = self.initial_message(self.player)
+        self.send_score(player, "eleven")
+
+        # done with homeruns
+        done_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                               message=ScoreSubmission.DONE.value)
+        (player, messages,
+            next_action) = self.action.process(player, done_message)
+        # now asked about SS
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SS_SELECT_PLAYER.value)
+        # pick wrong batter
+        batter = self.roster[0]
+        wrong_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                message=batter.get("player_name"))
+        (player, messages,
+            next_action) = self.action.process(player, wrong_message)
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.HOW_HITS_PLAYER.value.format(
+                              batter.get("player_name")))
+
+        # cancel selection
+        cancel_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message=ScoreSubmission.CANCEL.value)
+        (player, messages,
+            next_action) = self.action.process(player, cancel_message)
+        self.assertIsNone(next_action)
+        self.assertEquals(1, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.SS_SELECT_PLAYER.value)
+
+        # cancel back to homepage
+        (player, messages,
+            next_action) = self.action.process(player, cancel_message)
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
+
+    def testCancelSubmission(self):
+        """Test cancelling on the review screens."""
+        # submit everything up until game sheet review
+        player = self.get_to_submit_review("11", [], [])
+
+        # now say cancel
+        cancel_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message=ScoreSubmission.CANCEL.value)
+        (player, messages,
+            next_action) = self.action.process(player, cancel_message)
+
+        # now should be back at homepage
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
+
+        # ensure no game sheet was submitted at all
+        self.assertIsNone(self.platform.get_game_score())
+
+    def testCancelSubmissionByPayload(self):
+        """Test cancelling on the review screen using a payload"""
+        # submit everything up until game sheet review
+        player = self.get_to_submit_review("11", [], [], use_payload=True)
+
+        # now say cancel
+        cancel_option = Option(ScoreSubmission.CANCEL.value,
+                               ScoreSubmission.CANCEL.value)
+        cancel_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 payload=Payload(options=[cancel_option]))
+        (player, messages,
+            next_action) = self.action.process(player, cancel_message)
+
+        # now should be back at homepage
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
+
+        # ensure no game sheet was submitted at all
+        self.assertIsNone(self.platform.get_game_score())
+
+    def testSubmissionUsingMessages(self):
+        """Test a submission using just messages"""
+        # submit everything up until game sheet review
+        score = "11"
+        female = self.roster[0]
+        male = self.roster[1]
+        player = self.get_to_submit_review(score, [(male, "1 hr")],
+                                           [(female, "2 ss")])
+
+        # now say submit
+        submit_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message=ScoreSubmission.SUBMIT.value)
+        (player, messages,
+            next_action) = self.action.process(player, submit_message)
+
+        # now should be back at homepage
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
+
+        # ensure the game sheet submitted makes sense
+        self.assertEquals(self.platform.get_game_score().get(HR),
+                          [male.get("player_id")])
+        self.assertEquals(self.platform.get_game_score().get(SS),
+                          2 * [female.get("player_id")])
+        self.assertEquals(self.platform.get_game_score().get(SCORE),
+                          int(score))
+
+    def testSubmissionUsingPayloads(self):
+        """Test a submission using just paylods"""
+        # submit everything up until game sheet review
+        score = "11"
+        female = self.roster[0]
+        male = self.roster[1]
+        player = self.get_to_submit_review(score, [(male, "1")],
+                                           [(female, "2")],
+                                           use_payload=True)
+
+        # now say submit
+        submit_option = Option(ScoreSubmission.SUBMIT.value,
+                               ScoreSubmission.SUBMIT.value)
+        submit_message = Message(TestSubmitScore.TEST_SENDER_ID,
+                                 message=None,
+                                 payload=Payload(options=[submit_option]))
+        (player, messages,
+            next_action) = self.action.process(player, submit_message)
+
+        # now should be back at homepage
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
+
+        # ensure the game sheet submitted makes sense
+        self.assertEquals(self.platform.get_game_score().get(HR),
+                          [male.get("player_id")])
+        self.assertEquals(self.platform.get_game_score().get(SS),
+                          2 * [female.get("player_id")])
+        self.assertEquals(self.platform.get_game_score().get(SCORE),
+                          int(score))
+
+
+class TestSubmitScoreByText(TestActionBase):
+    TEST_PLAYER_ID = 1
+    TEST_PLAYER_NAME = "Submit score test player name"
+    TEST_TEAM_ID = 1
+    TEST_TEAM_NAME = "Test team"
+    TEST_SENDER_ID = "submit_score_test_sender_id"
+
+    def setUp(self):
+        super(TestSubmitScoreByText, self).setUp()
+        self.action = self.create_action(SubmitScore)
+        self.player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
+                             name=TestSubmitScore.TEST_PLAYER_NAME)
+        player_info = {"player_id": TestSubmitScore.TEST_PLAYER_ID}
+        self.player.set_player_info(player_info)
+
+    def setupBackground(self):
+        self.team = self.random_team()
+
+    def testSetup(self):
+        pass
 
 
 if __name__ == "__main__":

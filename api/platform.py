@@ -9,8 +9,9 @@ import requests
 from datetime import date
 from api.helper import get_this_year
 from api.logging import LOGGER
-from api.errors import PlatformException,\
-    PLATFORMMESSAGE, IdentityException, NotCaptainForAnyTeam, TeamDoesNotExist
+from api.errors import PLATFORMMESSAGE, PlatformException, IdentityException,\
+     NotCaptainForAnyTeam, TeamDoesNotExist, GameDoesNotExist,\
+     NotCaptainException
 
 
 class PlatformService():
@@ -183,7 +184,7 @@ class PlatformService():
         games = response.json()
         return games
 
-    def lookup_team_roster(self, team_id):
+    def lookup_team_roster(self, team_id) -> dict:
         """Lookup the team roster for the given team
 
         Parameters:
@@ -196,5 +197,30 @@ class PlatformService():
         if response.status_code == 400:
             raise TeamDoesNotExist("Teams does not seem to exist")
         if response.status_code != 200:
+            raise PlatformException(PLATFORMMESSAGE)
+        return response.json()
+
+    def submit_game_score(self, game_score: dict) -> bool:
+        """Submit the given game score
+
+        Args:
+            game_score (dict): holds a score sheet for a game
+
+        Raises:
+            GameDoesNotExist: the gamesheet was for a game that does not exist
+            NotCaptainException: not the captain of the given team
+            PlatformException: unable to comiit
+
+        Returns:
+            bool: True if successful
+        """
+        request_url = self.baseurl + "/api/bot/submit_score"
+        response = requests.post(request_url,
+                                 data=game_score, headers=self.headers)
+        if response.status_code == 404:
+            raise GameDoesNotExist("Game does not exist")
+        elif response.status_code == 401:
+            raise NotCaptainException("The player not a captain of team")
+        elif response.status_code != 200:
             raise PlatformException(PLATFORMMESSAGE)
         return response.json()

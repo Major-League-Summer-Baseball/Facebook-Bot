@@ -32,11 +32,11 @@ class TestActionBase(unittest.TestCase):
         return action_class(self.db,
                             self.platform)
 
-    def random_player(self) -> dict:
+    def random_player(self, gender: str = None) -> dict:
         """Return a random player"""
         return {"player_id": self.random_id(),
                 "player_name": self.random_string(),
-                "gender": self.random_gender(),
+                "gender": self.random_gender() if gender is None else gender,
                 "active": True}
 
     def random_team(self, captain: dict = None,

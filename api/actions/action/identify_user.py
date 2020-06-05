@@ -9,7 +9,7 @@ from typing import Tuple, List
 from api.actions import ActionKey, ActionState
 from api.actions.action import Action
 from api.settings.message_strings import Registration
-from api.helper import parse_out_email
+from api.parsers import parse_out_email
 from api.logging import LOGGER
 from api.message import Message
 from api.players.player import Player

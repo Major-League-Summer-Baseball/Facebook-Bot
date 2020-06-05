@@ -115,12 +115,34 @@ class ScoreSubmission(Enum):
     NO_GAMES = "There are no games to submit scores for"
     SELECT_TEAM = "Which team would you like to select team for"
     SELECT_GAME = "What game would you like to submit a score for"
-    TEXT_METHOD = "just a message"
-    BUTTON_METHOD = "using buttons"
+    WHICH_METHOD = "How would you like to submit your score"
+    TEXT_METHOD = "Simple message"
+    BUTTON_METHOD = "Menu using buttons"
     UNRECOGNIZED_GAME = "Sorry, did not recognize the game"
     UNRECOGNIZED_TEAM = "Sorry, did not recognize the team"
+    UNRECOGNIZED_METHOD = "Sorry, did not understand."
+    UNRECOGNIZED_PLAYER = "Sorry, not sure who you meant"
+    PLAYER_NOT_ELIGIBLE = "Sorry, player not elgible right now"
+    AMBIGUOUS_PLAYER = "Sorry, unable to distinguish between {}"
+    HR_SELECT_PLAYER = "Select a player who hit a homerun:"
+    SS_SELECT_PLAYER = "Select a player who hit a Sapporo single:"
+    HOW_HITS_PLAYER = " How many did {} hit?"
     NOT_CAPTAIN = "Appears you are not a captain"
+    ASK_FOR_SCORE = "How many runs did your team score?"
+    UNRECOVERABLE_ERROR = "Sorry, an issue came up - please try again"
+    COMMUNICATION_ERROR = UNRECOVERABLE_ERROR + "\n Should be good now"
+    GAME_SUBMITTED = "Game has been submitted"
+    SUBMIT = "Submit"
     CANCEL = "Cancel"
+    DONE = "Done"
+    NOT_DONE = "Sorry, Still working on this"
+
+
+class GameSheetOverview(Enum):
+    """Holds all string related to the overview of a gamesheet"""
+    SCORE = "Score: {}"
+    HRS = "Homeruns:\n{}"
+    SS = "Sapporo Singles:\n{}"
 
 
 class Facebook(Enum):

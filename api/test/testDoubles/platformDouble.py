@@ -17,6 +17,7 @@ class PlatformDouble():
         self.player_by_name = player_by_name
         self.teams = teams
         self._games_to_submit_scores_for = []
+        self.game_sheet = None
 
     def set_mock_player(self, player_by_email=None, player_by_name=None):
         """Set the mock player the platform should return upon lookups"""
@@ -97,3 +98,11 @@ class PlatformDouble():
     def games_to_submit_scores_for(self, player, team_id):
         """Method that just returns the mock games that need a score"""
         return self._games_to_submit_scores_for
+
+    def submit_game_score(self, game_sheet: dict) -> None:
+        """Method to submit the game score"""
+        self.game_sheet = game_sheet
+
+    def get_game_score(self) -> dict:
+        """Get the game sheet that was submitted"""
+        return self.game_sheet
