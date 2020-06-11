@@ -970,8 +970,23 @@ class SubmitScoreByButtons(Action):
             action_state.set_data(data)
             player.set_action_state(action_state)
             return self.display_batters(player, message, category)
+        elif hits is not None and more_hr_than_rbis(game_sheet, hits):
+            # let them know that is too many
+            too_many = Message(message.get_sender_id(),
+                               recipient_id=message.get_recipient_id(),
+                               message=ScoreSubmission.TOO_MANY_HRS.value)
+            (player, messages,
+                next_action) = self.display_batters(player, message, category)
+            return (player, [too_many] + messages, next_action)
         else:
-            return self.ask_for_category_number(player, message, category)
+            # let them know did not understand
+            content = ScoreSubmission.UNRECOGNIZED_METHOD.value
+            try_again = Message(message.get_sender_id(),
+                                recipient_id=message.get_recipient_id(),
+                                message=content)
+            (player, messages,
+                next_action) = self.display_batters(player, message, category)
+            return (player, [try_again] + messages, next_action)
 
     def display_review(self, player: Player,
                        message: Message) -> Tuple[Player, List[Message],

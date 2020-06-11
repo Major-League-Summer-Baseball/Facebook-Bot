@@ -53,6 +53,7 @@ class HomescreenComments(Enum):
     NO_GAMES = "No upcoming games"
     NOT_CAPTAIN = "Appears you are not a captain"
     NO_UPCOMING_GAMES = "There are no upcoming games"
+    WELCOME_CONVENOR = "Welcome to elite club 😉"
 
 
 MAIN_MENU_UPCOMING_GAMES_TITLE = "Upcoming Games"
@@ -123,6 +124,7 @@ class ScoreSubmission(Enum):
     UNRECOGNIZED_METHOD = "Sorry, did not understand."
     UNRECOGNIZED_PLAYER = "Sorry, not sure who you meant"
     PLAYER_NOT_ELIGIBLE = "Sorry, player not elgible right now"
+    TOO_MANY_HRS = "Sorry cant havve more homeruns than runs scored"
     AMBIGUOUS_PLAYER = "Sorry, unable to distinguish between {}"
     HR_SELECT_PLAYER = "Select a player who hit a homerun:"
     SS_SELECT_PLAYER = "Select a player who hit a Sapporo single:"

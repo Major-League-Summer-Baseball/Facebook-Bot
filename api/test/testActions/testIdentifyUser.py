@@ -121,7 +121,7 @@ class TestIdentifyUser(TestActionBase):
         # send a bunch of bad emails
         attempts = 0
         player = self.player
-        while attempts <= IdentifyUser.NUMBER_OF_TRIES:
+        while attempts < IdentifyUser.NUMBER_OF_TRIES:
 
             email = "My email is {}".format(self.random_email())
             message = Message(TestIdentifyUser.TEST_SENDER_ID, message=email)

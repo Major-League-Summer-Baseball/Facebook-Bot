@@ -17,7 +17,7 @@ PAGE_TOKEN_DEFAULT = ("EAABrxzY0HL4BADKTzPtw3xmcgxDZBjrmYxQPcZAYhLpAgxJga2fM" +
                       "vtJh2USjBUXlzsiU7GlqSj9OW")
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN", None)
 VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN", None)
-
+SECRET_CONVENOR_CODE = os.environ.get("CONVENOR_CODE", "⬆️⬆️⬇️⬇️⬅️⬅️➡️➡️BA")
 HEADERS = {
     'Authorization': 'Basic %s' % b64encode(bytes(ADMIN + ':' +
                                                   PASSWORD, "utf-8")

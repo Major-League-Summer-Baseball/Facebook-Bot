@@ -14,6 +14,7 @@ from api.settings.message_strings import HomescreenComments, MainMenu
 from api.players.player import Player
 from api.actions import ActionKey
 from api.actions.action import Action
+from api.variables import SECRET_CONVENOR_CODE
 
 
 class Homescreen(Action):
@@ -35,14 +36,15 @@ class Homescreen(Action):
         messages = []
         next_action = None
         if message.get_message() is not None:
-            (messages, next_action) = self.parse_message(player, message,
-                                                         message.get_message())
+            (player, messages,
+                next_action) = self.parse_message(player, message,
+                                                  message.get_message())
         if message.get_payload() is not None:
             # if they sent a payload try to process it
             for option in message.get_payload().get_options():
                 content = option.get_data()
-                (tmp_msgs, tmp_action) = self.parse_message(player, message,
-                                                            content)
+                (player, tmp_msgs,
+                    tmp_action) = self.parse_message(player, message, content)
                 messages = messages + tmp_msgs
                 next_action = (tmp_action
                                if tmp_action is not None else next_action)
@@ -64,33 +66,42 @@ class Homescreen(Action):
                                              and next action
         """
         message_string = message_string.lower()
+        print(isinstance(message_string, str))
+        print(isinstance(SECRET_CONVENOR_CODE, str))
+        print(message_string == SECRET_CONVENOR_CODE)
         if (message_string in
             [Homescreen.UPCOMING_GAMES_PAYLOAD.lower(),
              MainMenu.UPCOMING_GAMES_TITLE.value.lower()]):
-            return (self.display_upcoming_games(player, message), None)
+            return (player, self.display_upcoming_games(player, message), None)
         elif (message_string in
               [Homescreen.LEAGUE_LEADERS_PAYLOAD.lower(),
                MainMenu.LEAGUE_LEADERS_TITLE.value.lower()]):
-            return (self.display_league_leaders(message), None)
+            return (player, self.display_league_leaders(message), None)
         elif (message_string in
               [Homescreen.EVENTS_PAYLOAD.lower(),
                MainMenu.EVENTS_TITLE.value.lower()]):
-            return (self.display_events(message), None)
+            return (player, self.display_events(message), None)
         elif (message_string in
               [Homescreen.FUN_PAYLOAD.lower(),
                MainMenu.FUN_TITLE.value.lower()]):
-            return (self.display_fun_meter(message), None)
+            return (player, self.display_fun_meter(message), None)
         elif (message_string in
               [Homescreen.SUBMIT_SCORE_PAYLOAD.lower(),
                MainMenu.SUBMIT_SCORE_TITLE.value.lower()]):
             if player.is_captain() or player.is_convenor():
-                return ([], ActionKey.SUBMIT_SCORE_KEY)
+                return (player, [], ActionKey.SUBMIT_SCORE_KEY)
             else:
                 content = HomescreenComments.NOT_CAPTAIN.value
-                return ([Message(message.get_sender_id(),
+                return (player, [Message(message.get_sender_id(),
                                  recipient_id=message.get_recipient_id(),
                                  message=content)], None)
-        return ([], None)
+        elif (message_string == SECRET_CONVENOR_CODE.lower()):
+            player.make_convenor()
+            convenor = HomescreenComments.WELCOME_CONVENOR.value
+            return (player, [Message(message.get_sender_id(),
+                             recipient_id=message.get_recipient_id(),
+                             message=convenor)], None)
+        return (player, [], None)
 
     def display_base_options(self, player: Player,
                              message: Message) -> List[Message]:
