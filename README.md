@@ -8,7 +8,7 @@ See the the Wiki Pages for [help](https://github.com/fras2560/mlsb-platform/wiki
 * pip
 
 # Getting Started
-If just making a small change then it recommended to just run the unittests. 
+If just making a small change then it recommended to just run the unittests.
 
 **TLDR**
 ```
@@ -21,7 +21,7 @@ python -m unittest discover -s api/test -p <TEST_SUITE>.py
 
 ## Environment Variables
 The following variables are used by MLSB Facebook bot (default in brackets):
-* ADMIN: the admin's user name for the platform API ("admin") 
+* ADMIN: the admin's user name for the platform API ("admin")
 * PASSWORD: the admin password for the platform API ("password")
 * PLATOFRM: the MLSB platform URL (http://localhost:5000)
 * MONGODEB_URI: the Mongo DB URI (mongodb://localhost:27017/mlsb)
@@ -43,7 +43,7 @@ Now you can activate the virtual environment using:
 # on windows and assuming used venv folder
 venv\scripts\activate.bat
 # on linux and assuming used venv folder
-source venv/bing/activate
+source venv/bin/activate
 ```
 
 Now any installed packages using `pip` will be isolated to the virtual environment. To deactivate
@@ -102,9 +102,7 @@ See the following tutorials for setting it up:
 * [Linux](https://docs.mongodb.com/manual/administration/install-on-linux/)
 * [Mac](https://treehouse.github.io/installation-guides/mac/mongo-mac.html)
 
-Grab the source code from [here](https://github.com/fras2560/mlsb-platform) and see the readme for how to get it setup.
-
-Once mongo is setup create a database called mlsb with a collection called users. Ensure that mongo database is availble on some port and set environment variable tto he DATABASE_URL mongodb://<USER>:<DBPASSWORD>@localhost:<PORT> (e.g. mongodb://admin:password@localhost:27018)
+Once mongo is setup create a database called mlsb with a collection called users. Ensure that mongo database is availble on some port and set environment variable to the DATABASE_URL mongodb://<USER>:<DBPASSWORD>@localhost:<PORT> (e.g. mongodb://admin:password@localhost:27018)
 
 #### Set Environment Variables
 When using the manual setup and setting most environment to reasonable defaults the following setup should work:
@@ -132,7 +130,7 @@ Session Status                online
 Session Expires               7 hours, 59 minutes
 Version                       2.3.35
 Region                        United States (us)
-Web Interface                 http://127.0.0.1:4040 
+Web Interface                 http://127.0.0.1:4040
 Forwarding                    https://e6f06512.ngrok.io -> http://localhost:5001
 ```
 Set the Facebook Bot Callback URL to the forwarding ngrok.io the output by ngrok.

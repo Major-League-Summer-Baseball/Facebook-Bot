@@ -5,12 +5,13 @@
 @project: Facebook Bot
 @summary: Holds a base class that setups some common things needed
 '''
-from api.test.testDoubles.messengerDouble import MessengerDouble
-from api.test.testDoubles.databaseDouble import DatabaseDouble
-from api.test.testDoubles.platformDouble import PlatformDouble
-from api.helper import get_this_year
 from random import randint, choice
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
+from api.platform import PlatformService, Player, Team, Game, TeamRoster
+from api.test.testDoubles.messengerDouble import MessengerDouble
+from api.test.testDoubles.databaseDouble import DatabaseDouble
+from api.helper import get_this_year
 import unittest
 import string
 
@@ -23,7 +24,7 @@ class TestActionBase(unittest.TestCase):
     def setUp(self):
         """Setups all the test doubles"""
         self.db = DatabaseDouble()
-        self.platform = PlatformDouble()
+        self.platform = MagicMock(PlatformService)
         self.messenger = MessengerDouble()
         self.random_ids = []
 
@@ -32,15 +33,15 @@ class TestActionBase(unittest.TestCase):
         return action_class(self.db,
                             self.platform)
 
-    def random_player(self, gender: str = None) -> dict:
+    def random_player(self, gender: str = None) -> Player:
         """Return a random player"""
         return {"player_id": self.random_id(),
                 "player_name": self.random_string(),
                 "gender": self.random_gender() if gender is None else gender,
                 "active": True}
 
-    def random_team(self, captain: dict = None,
-                    year: int = get_this_year()) -> dict:
+    def random_team(self, captain: Player = None,
+                    year: int = get_this_year()) -> Team:
         """Return a random team
 
         Parameters:
@@ -56,8 +57,8 @@ class TestActionBase(unittest.TestCase):
                 "year": year,
                 "espys": self.random_number()}
 
-    def random_game(self, team_one: dict, team_two: dict,
-                    date: datetime = None) -> dict:
+    def random_game(self, team_one: Team, team_two: Team,
+                    date: datetime = None) -> Game:
         """Return a random game between the two teams"""
         return {"home_team": team_one.get("team_name", self.random_string()),
                 "home_team_id": team_one.get("team_id", self.random_id()),
@@ -70,7 +71,7 @@ class TestActionBase(unittest.TestCase):
                 "status": self.random_string(),
                 "field": "WP1"}
 
-    def random_roster(self, team: int, captain: bool = None) -> dict:
+    def random_roster(self, team: int, captain: bool = None) -> TeamRoster:
         """Return a random roster"""
         captain = captain if captain is not None else self.random_player()
         players = [captain]

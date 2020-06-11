@@ -138,11 +138,15 @@ class FacebookMessenger(Messenger):
             self._send_buttons(message)
         elif message.get_payload().is_quick_reply():
             quick_replies = message.get_payload().get_payload_response()
+            print("Quick Replies")
+            print(quick_replies)
             message_data = {"recipient":
                             {"id": message.get_sender_id()},
                             "message": {
                                 "text": message.get_message(),
                                 "quick_replies": quick_replies}}
+            print("Message data")
+            print(message_data)
             self._send_data(message_data)
 
     def _send_buttons(self, message):
@@ -184,7 +188,7 @@ class FacebookMessenger(Messenger):
 
     def _send_buttons_aux(self, sender_id, message, buttons):
 
-        message_text = Facebook.SCROLL_FOR_MORE_OPTIONS
+        message_text = Facebook.SCROLL_FOR_MORE_OPTIONS.value
         if message is not None:
             message_text += " \n " + message.get_message()
         elements = [

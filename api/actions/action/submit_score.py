@@ -6,6 +6,7 @@
 @summary: Action for when a captain/convenor submits a score
 '''
 from typing import Tuple, List
+from api.platform import TeamRoster, Team, PlayerInfo, GameSheet, Game
 from api.players.player import Player
 from api.parsers import parse_number, match_with_player
 from api.helper import is_game_in_list_of_games
@@ -19,28 +20,23 @@ from api.errors import PlatformException, GameDoesNotExist, NotCaptainException
 CONFIDENCE_LEVEL = 0.60
 
 # various contstant that are used as keys
-SS = "ss"
-HR = "hr"
-GENDER = "gender"
-TEAM_NAME = "team_name"
-TEAM_ID = "team_id"
 TEAM_ROSTER = "teamroster"
 TEAM_LOOKUP = "team_lookup"
-COLOR = "color"
-CAPTAIN = "captain"
-CAPTAIN_ID = "captain_id"
-PLAYER_NAME = "player_name"
-PLAYER_ID = "player_id"
 GAMES = "games"
-GAME_ID = "game_id"
 GAME_SHEET = "game_sheet"
-SCORE = "score"
 BATTER_ID = "batter_id"
 
 
-def get_team_name(team: dict) -> str:
-    """Returns the team name of the given team"""
-    return team.get(TEAM_NAME, team.get(COLOR, "name unknown"))
+def get_team_name(team: Team) -> str:
+    """Get the team name from the team.
+
+    Args:
+        team (Team): the team
+
+    Returns:
+        str: the team name if present otherwise its color
+    """
+    return team.get(Team.NAME, team.get(Team.COLOR, "name unknown"))
 
 
 def did_they_cancel(message: Message) -> bool:
@@ -106,21 +102,21 @@ def did_they_submit(message: Message) -> bool:
     return False
 
 
-def who_is_captain(team_roster: dict) -> dict:
-    """Who is the captain of the given team roster
+def who_is_captain(team_roster: TeamRoster) -> PlayerInfo:
+    """Returns who is the captain of the given.
 
     Args:
-        team_roster (dict): a team roster object
+        team_roster (TeamRoster): the team roser
 
     Raises:
-        PlatformException: raised if no captain in the the list of players
+        PlatformException: given a team with no captain
 
     Returns:
-        dict: the team captain
+        PlayerInfo: the player who is the captain
     """
-    if team_roster.get(CAPTAIN, None) is None:
+    if team_roster.get(TeamRoster.CAPTAIN, None) is None:
         raise PlatformException(f"Given team has no captain {team_roster}")
-    return team_roster.get(CAPTAIN)
+    return team_roster.get(TeamRoster.CAPTAIN)
 
 
 def init_gamesheet(player: Player) -> Player:
@@ -135,43 +131,30 @@ def init_gamesheet(player: Player) -> Player:
     action_state = player.get_action_state()
     data = action_state.get_data()
     data[GAME_SHEET] = {
-        GAME_ID: data.get(GAME_ID),
-        PLAYER_ID: data.get(CAPTAIN).get(PLAYER_ID),
-        SCORE: None,
-        HR: [],
-        SS: []
+        GameSheet.GAME_ID: data.get(Game.ID),
+        GameSheet.PLAYER_ID: data.get(TeamRoster.CAPTAIN).get(PlayerInfo.ID),
+        GameSheet.SCORE: None,
+        GameSheet.HR: [],
+        GameSheet.SS: []
     }
     player.set_action_state(action_state.set_data(data))
     return player
 
 
-def player_eligible_for_category(game_sheet: dict, player: dict,
+def player_eligible_for_category(game_sheet: GameSheet, player: PlayerInfo,
                                  category: str) -> bool:
     """Returns whether the given player is elgible for the given category.
 
     Args:
-        game_sheet (dict): holds the game score object
-        player (dict): the player to check
+        game_sheet (GameSheet): holds the game score object
+        player (PlayerInfo): the player to check
         category (str): the category to check
     Returns:
         bool: True if player is eligible False
     """
-    return (player.get(PLAYER_ID) not in game_sheet[category] and
-            (category == HR or player.get(GENDER).lower() == "f"))
-
-
-def has_player_already_been_considered(game_sheet: dict, player: dict,
-                                       category: str) -> bool:
-    """Returns whether the given player had their score (hr/ss) scored already.
-
-    Args:
-        game_sheet (dict): holds the game score object
-        player (dict): the player to check
-        category (str): the category to check
-    Returns:
-        bool: True if recorded a score for the player otherwise False
-    """
-    return player.get(PLAYER_ID) in game_sheet[category]
+    return (player.get(PlayerInfo.ID) not in game_sheet[category] and
+            (category == GameSheet.HR or
+             player.get(PlayerInfo.GENDER).lower() == PlayerInfo.FEMALE))
 
 
 def is_score_valid(score: int) -> bool:
@@ -186,90 +169,92 @@ def is_score_valid(score: int) -> bool:
     return score >= 0 and score < 50
 
 
-def list_of_names(players: List[dict]) -> List[str]:
-    """Returns a list of player names
+def list_of_names(players: List[PlayerInfo]) -> List[str]:
+    """Returns a list of player names.
 
     Args:
-        players (List[dict]): the list of players objects
+        players (List[PlayerInfo): the list of players
 
     Returns:
         List[str]: just a list of their names
     """
-    return [player.get(PLAYER_NAME) for player in players]
+    return [player.get(PlayerInfo.NAME) for player in players]
 
 
-def lookup_player_name(teamroster: List[dict], player_id: int) -> str:
-    """Look up the player's name for the given player id
+def lookup_player_name(teamroster: TeamRoster, player_id: int) -> str:
+    """Look up the player's name for the given player id.
 
     Args:
-        teamroster (List[dict]): a list of players
+        teamroster (TeamRoster): the team roster
         player_id (int): the id of the player to lookup
 
     Returns:
         str: the player name if found otherwise None
     """
-    for player in teamroster:
-        if player.get(PLAYER_ID) == player_id:
-            return player.get(PLAYER_NAME)
+    for player in teamroster.get(TeamRoster.PLAYERS):
+        if player.get(PlayerInfo.ID) == player_id:
+            return player.get(PlayerInfo.NAME)
     return None
 
 
-def lookup_game(games: List[dict], game_id: int) -> dict:
-    """Lookup the given game id in the a list of games
+def lookup_game(games: List[Game], game_id: int) -> Game:
+    """Lookup the given game id in the a list of games.
 
     Args:
-        games (List[dict]): the list of games
+        games (List[Game]): the list of games
         game_id (int): the id of the game to find
 
     Returns:
-        dict: the game
+        Game: the game associated with the game id
     """
     for game in games:
-        if game.get(GAME_ID) == game_id:
+        if game.get(Game.ID) == game_id:
             return game
     return None
 
 
-def gamesheet_overview(gamesheet: dict, game: dict,
-                       teamroster: List[dict]) -> str:
-    """Returns a overview of the given gamesheet
+def gamesheet_overview(gamesheet: GameSheet, game: Game,
+                       teamroster: TeamRoster) -> str:
+    """Returns a overview of the given gamesheet.
 
     Args:
-        gamesheet (dict): the game sheet
-        game (dict): the game the sheet is for
-        teamroster (List[dict]): the team roster
+        gamesheet (GameSheet): the game sheet
+        game (Game): the game the sheet is for
+        teamroster (TeamRoster): the team roster
 
     Returns:
         str: the overview
     """
-    score = GameSheetOverview.SCORE.value.format(gamesheet.get(SCORE))
+    score = GameSheetOverview.SCORE.value.format(
+        gamesheet.get(GameSheet.SCORE))
     parts = [GameFormatter(game).format(), score]
     hrs = []
     ss = []
-    for player_id in set(gamesheet.get(HR)):
+    for player_id in set(gamesheet.get(GameSheet.HR)):
         hrs.append("{}: {}".format(
             lookup_player_name(teamroster, player_id),
-            gamesheet.get(HR).count(player_id)))
-    for player_id in set(gamesheet.get(SS)):
+            gamesheet.get(GameSheet.HR).count(player_id)))
+    for player_id in set(gamesheet.get(GameSheet.SS)):
         ss.append("{}: {}".format(
             lookup_player_name(teamroster, player_id),
-            gamesheet.get(SS).count(player_id)))
+            gamesheet.get(GameSheet.SS).count(player_id)))
     parts.append(GameSheetOverview.HRS.value.format("\n\t".join(hrs)))
     parts.append(GameSheetOverview.SS.value.format("\n\t".join(ss)))
     return "\n".join(parts)
 
 
-def more_hr_than_rbis(game_sheet: dict, hrs: int) -> bool:
+def more_hr_than_rbis(game_sheet: GameSheet, hrs: int) -> bool:
     """Would adding the given homeruns mean there is more homeruns than runs.
 
     Args:
-        game_sheet (dict): the game sheet information
+        game_sheet (GameSheet): the game sheet information
         hrs (int): how many homeruns that someone wants to add
 
     Returns:
         bool: True if there would be more homeruns than runs
     """
-    return len(game_sheet.get(HR)) + hrs > game_sheet.get(SCORE)
+    proposed_hrs = len(game_sheet.get(GameSheet.HR)) + hrs
+    return proposed_hrs > game_sheet.get(GameSheet.SCORE)
 
 
 class SubmitScore(Action):
@@ -353,7 +338,7 @@ class SubmitScore(Action):
         action_state = player.get_action_state()
 
         # find the team they are submitting for
-        team_id = action_state.get_data().get(TEAM_ID, None)
+        team_id = action_state.get_data().get(Team.ID, None)
         if team_id is None:
             return self.display_teams(player, message)
 
@@ -362,9 +347,10 @@ class SubmitScore(Action):
             games = action_state.get_data().get(GAMES)
         else:
             # get the games and remember them for later
-            captain_id = action_state.get_data().get(CAPTAIN).get(PLAYER_ID)
-            games = self.platform.games_to_submit_scores_for(player,
-                                                             captain_id)
+            captain_id = action_state.get_data()\
+                .get(Team.CAPTAIN).get(PlayerInfo.ID)
+            games = self.platform.games_to_submit_scores_for(int(captain_id),
+                                                             int(team_id))
             data = action_state.get_data()
             data[GAMES] = games
             player.set_action_state(action_state.set_data(data))
@@ -372,7 +358,7 @@ class SubmitScore(Action):
         game_options = []
         for game in games:
             option = Option(GameFormatter(game).format(),
-                            str(game.get(GAME_ID)))
+                            str(game.get(Game.ID)))
             game_options.append(option)
 
         # return to home screen since no games to submit for
@@ -439,7 +425,7 @@ class SubmitScore(Action):
         action_state = player.get_action_state()
         action_state.set_state(SubmitScore.DETERMINE_WHICH_METHOD_STATE)
         data = action_state.get_data()
-        data[GAME_ID] = game_id
+        data[Game.ID] = game_id
         player.set_action_state(action_state.set_data(data))
 
         return self.display_methods(player, message)
@@ -473,11 +459,11 @@ class SubmitScore(Action):
             for team in teams:
                 # if they are deemed a captain then list it as an option
                 # this allows them to serve as a captain
-                if player.is_captain(team_id=team.get(TEAM_ID)):
+                if player.is_captain(team_id=team.get(Team.ID)):
                     team_name = get_team_name(team)
                     team_options.append(Option(team_name,
-                                               str(team.get(TEAM_ID))))
-                    team_lookup[str(team.get(TEAM_ID))] = team_name
+                                               str(team.get(Team.ID))))
+                    team_lookup[str(team.get(Team.ID))] = team_name
 
         if (len(team_options) == 0):
             # no teams to display
@@ -644,9 +630,10 @@ class SubmitScore(Action):
         state = player.get_action_state()
         data = state.get_data()
         data[TEAM_LOOKUP] = {str(team_id): "only one team"}
-        data[TEAM_ID] = team_id
-        data[TEAM_ROSTER] = self.platform.lookup_team_roster(team_id)
-        data[CAPTAIN] = who_is_captain(data[TEAM_ROSTER].get(team_id))
+        data[Team.ID] = team_id
+        roster = self.platform.lookup_team_roster(team_id)
+        data[TEAM_ROSTER] = roster
+        data[Team.CAPTAIN] = who_is_captain(data[TEAM_ROSTER])
         player.set_action_state(state.set_data(data))
         return player
 
@@ -673,7 +660,7 @@ class SubmitScoreByText(Action):
         to_do = Message(message.get_sender_id(),
                         recipient_id=message.get_recipient_id(),
                         message=ScoreSubmission.NOT_DONE.value)
-        return (player, [to_do], None)
+        return (player, [to_do], ActionKey.HOME_KEY)
 
 
 class SubmitScoreByButtons(Action):
@@ -710,13 +697,13 @@ class SubmitScoreByButtons(Action):
         elif state == SubmitScoreByButtons.DETERMINE_SCORE_STATE:
             return self.set_score(player, message)
         elif state == SubmitScoreByButtons.DETERMINE_SS_BATTER_STATE:
-            return self.select_batter(player, message, SS)
+            return self.select_batter(player, message, GameSheet.SS)
         elif state == SubmitScoreByButtons.DETERMINE_SS_NUMBER_STATE:
-            return self.set_category_number(player, message, SS)
+            return self.set_category_number(player, message, GameSheet.SS)
         elif state == SubmitScoreByButtons.DETERMINE_HR_BATTER_STATE:
-            return self.select_batter(player, message, HR)
+            return self.select_batter(player, message, GameSheet.HR)
         elif state == SubmitScoreByButtons.DETERMINE_HR_NUMBER_STATE:
-            return self.set_category_number(player, message, HR)
+            return self.set_category_number(player, message, GameSheet.HR)
         elif state == SubmitScoreByButtons.REVIEW_DETAILS_STATE:
             return self.submit_game_sheet(player, message)
         return (player, [], ActionKey.HOME_KEY)
@@ -742,8 +729,6 @@ class SubmitScoreByButtons(Action):
 
         # give a list of quick reply options
         scores = [Option(number, str(number)) for number in range(1, 3)]
-        scores.append(Option(ScoreSubmission.DONE.value,
-                             ScoreSubmission.DONE.value))
         scores.append(Option(ScoreSubmission.CANCEL.value,
                              ScoreSubmission.CANCEL.value))
         payload = Payload(payload_type=Payload.QUICK_REPLY_TYPE,
@@ -768,7 +753,7 @@ class SubmitScoreByButtons(Action):
                                                      response messages and
                                                      next action to take
         """
-        if did_they_cancel(message) or are_they_done(message):
+        if did_they_cancel(message):
             return (player, [], ActionKey.HOME_KEY)
 
         if message.get_payload() is not None:
@@ -779,10 +764,10 @@ class SubmitScoreByButtons(Action):
             # set the score of the game
             action_state = player.get_action_state()
             data = action_state.get_data()
-            data[GAME_SHEET][SCORE] = score
+            data[GAME_SHEET][GameSheet.SCORE] = score
             action_state.set_data(data)
             player.set_action_state(action_state)
-            return self.display_batters(player, message, HR)
+            return self.display_batters(player, message, GameSheet.HR)
         else:
             return self.ask_for_score(player, message)
 
@@ -804,21 +789,22 @@ class SubmitScoreByButtons(Action):
         # update the state
         action_state = player.get_action_state()
         state = (SubmitScoreByButtons.DETERMINE_HR_BATTER_STATE
-                 if category == HR
+                 if category == GameSheet.HR
                  else SubmitScoreByButtons.DETERMINE_SS_BATTER_STATE)
         player.set_action_state(action_state.set_state(state))
 
         # setup each player as a button to click
         data = player.get_action_state().get_data()
         batters = []
-        if category == SS or not more_hr_than_rbis(data.get(GAME_SHEET), 1):
+        if category == GameSheet.SS or not more_hr_than_rbis(
+                data.get(GAME_SHEET), 1):
             # only show batters if homeruns is less than score
             # otherwise can assume they are done
-            for teammate in data.get(TEAM_ROSTER):
+            for teammate in data.get(TEAM_ROSTER).get(TeamRoster.PLAYERS):
                 if player_eligible_for_category(data.get(GAME_SHEET), teammate,
                                                 category):
-                    batters.append(Option(teammate.get(PLAYER_NAME),
-                                          str(teammate.get(PLAYER_ID))))
+                    batters.append(Option(teammate.get(PlayerInfo.NAME),
+                                          str(teammate.get(PlayerInfo.ID))))
 
         # add the cancel and done option so they can proceed
         done = ScoreSubmission.DONE.value
@@ -829,7 +815,7 @@ class SubmitScoreByButtons(Action):
         # create the message with each batter as a payload option
         payload = Payload(options=batters)
         m = (ScoreSubmission.HR_SELECT_PLAYER.value
-             if category == HR
+             if category == GameSheet.HR
              else ScoreSubmission.SS_SELECT_PLAYER.value)
         message = Message(message.get_sender_id(),
                           recipient_id=message.get_recipient_id(),
@@ -854,16 +840,17 @@ class SubmitScoreByButtons(Action):
         if did_they_cancel(message):
             return (player, [],  ActionKey.HOME_KEY)
         elif are_they_done(message):
-            return (self.display_review(player, message) if category == SS
-                    else self.display_batters(player, message, SS))
+            return (self.display_review(player, message)
+                    if category == GameSheet.SS
+                    else self.display_batters(player, message, GameSheet.SS))
         batter_id = None
         if message.get_payload() is not None:
             batter_id = int(message.get_payload().get_options()[0].get_data())
         else:
             data = player.get_action_state().get_data()
             team_roster = data.get(TEAM_ROSTER)
-            (confidence,
-             batters) = match_with_player(message.get_message(), team_roster)
+            (confidence, batters) = match_with_player(
+                message.get_message(), team_roster.get(TeamRoster.PLAYERS))
             confident = confidence < CONFIDENCE_LEVEL
             if len(batters) != 1 or confident:
                 # if unable to narrow down to one players let them know why
@@ -892,7 +879,7 @@ class SubmitScoreByButtons(Action):
                                                         category)
                 return (player, [message] + messages, next_action)
 
-            batter_id = batters[0].get(PLAYER_ID)
+            batter_id = batters[0].get(PlayerInfo.ID)
 
         roster = player.get_action_state().get_data().get(TEAM_ROSTER)
         if (batter_id is not None and
@@ -925,7 +912,7 @@ class SubmitScoreByButtons(Action):
         # update the state
         action_state = player.get_action_state()
         state = (SubmitScoreByButtons.DETERMINE_HR_NUMBER_STATE
-                 if category == HR
+                 if category == GameSheet.HR
                  else SubmitScoreByButtons.DETERMINE_SS_NUMBER_STATE)
         player.set_action_state(action_state.set_state(state))
 
@@ -937,8 +924,8 @@ class SubmitScoreByButtons(Action):
 
         # specify who the batter was the selected in case they picked wrong one
         data = action_state.get_data()
-        player_name = lookup_player_name(data.get("teamroster"),
-                                         data.get("batter_id"))
+        player_name = lookup_player_name(data.get(TEAM_ROSTER),
+                                         data.get(BATTER_ID))
         how_many = ScoreSubmission.HOW_HITS_PLAYER.value.format(player_name)
         message = Message(message.get_sender_id(),
                           recipient_id=message.get_recipient_id(),
@@ -975,8 +962,8 @@ class SubmitScoreByButtons(Action):
         action_state = player.get_action_state()
         data = action_state.get_data()
         game_sheet = player.get_action_state().get_data().get(GAME_SHEET)
-        if (hits is not None and
-                (category == SS or not more_hr_than_rbis(game_sheet, hits))):
+        if (hits is not None and (category == GameSheet.SS or
+                                  not more_hr_than_rbis(game_sheet, hits))):
             # set the score of the game
             batter_id = data.get(BATTER_ID)
             data[GAME_SHEET][category] += [batter_id for hit in range(0, hits)]
@@ -1009,7 +996,7 @@ class SubmitScoreByButtons(Action):
         # format an overview of the game sheet they have created
         data = action_state.get_data()
         gamesheet = data.get(GAME_SHEET)
-        game = lookup_game(data.get(GAMES), data.get(GAME_ID))
+        game = lookup_game(data.get(GAMES), int(data.get(Game.ID)))
         teamroster = data.get(TEAM_ROSTER)
         overview = gamesheet_overview(gamesheet, game, teamroster)
 
@@ -1045,7 +1032,7 @@ class SubmitScoreByButtons(Action):
         elif did_they_submit(message):
             game_sheet = player.get_action_state().get_data().get(GAME_SHEET)
             try:
-                self.platform.submit_game_score(game_sheet)
+                self.platform.submit_game_sheet(game_sheet)
                 content = ScoreSubmission.GAME_SUBMITTED.value
                 return (player,
                         [Message(message.get_sender_id(),

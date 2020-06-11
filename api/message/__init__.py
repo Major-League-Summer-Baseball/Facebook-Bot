@@ -45,11 +45,11 @@ class GameFormatter(DataFormatter):
 
     def format(self):
         """Returns a formatted string representation of the game"""
-        return "{}: {} vs {} @ {} on {}".format(self._data['date'],
-                                                self._data['home_team'],
-                                                self._data['away_team'],
-                                                self._data['time'],
-                                                self._data['field'])
+        return "{}:\n{} vs {}\n @ {} on {}".format(self._data['date'],
+                                                   self._data['home_team'],
+                                                   self._data['away_team'],
+                                                   self._data['time'],
+                                                   self._data['field'])
 
 
 class LeagueLeaderFormatter(DataFormatter):
@@ -142,9 +142,14 @@ class Payload():
         """Returns an array of payload responses"""
         payload = []
         for option in self._options:
-            payload.append({"type": self._type,
-                            "title": option.get_title(),
-                            "payload": option.get_data()})
+            if self.is_quick_reply():
+                payload.append({"content_type": self._type,
+                                "title": option.get_title(),
+                                "payload": option.get_data()})
+            else:
+                payload.append({"type": self._type,
+                                "title": option.get_title(),
+                                "payload": option.get_data()})
         return payload
 
 

@@ -46,7 +46,6 @@ class Homescreen(Action):
                 messages = messages + tmp_msgs
                 next_action = (tmp_action
                                if tmp_action is not None else next_action)
-        print(messages)
         if len(messages) == 0 and next_action is None:
             messages = self.display_base_options(player, message)
         return (player, messages, next_action)
@@ -221,7 +220,8 @@ class Homescreen(Action):
         Returns:
             List[Message]: the fun meter message
         """
-        fun_count = self.platform.fun_meter()[0].get("count", 0)
+        fun = self.platform.fun_meter()
+        fun_count = 0 if len(fun) < 1 else fun[0].get("count", 0)
         fun_message = HomescreenComments.FUN_TOTAL.value
         content = "\n".join([fun_count * random_emoji(),
                              random_fun_comment(),

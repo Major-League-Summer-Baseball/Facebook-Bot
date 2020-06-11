@@ -71,9 +71,10 @@ class ActionProcessor():
             return self._process(action, action_map, player, message)
 
         # now have some action to take and log their current status
-        LOGGER.debug("Current state of player:" +
-                     player.get_action_state().get_id() + " " + str(player))
-        action_to_take = self.get_action(player.get_action_state().get_id(),
+        state_key = player.get_action_state().get_id()
+        player_info = str(player)
+        LOGGER.debug(f"Current state of player: {state_key} {player_info}")
+        action_to_take = self.get_action(state_key,
                                          action_map)
         return self._process(action_to_take, action_map, player, message)
 
@@ -120,6 +121,8 @@ class ActionProcessor():
 
     def get_action(self, key: ActionKey, action_map: dict) -> Action:
         """Returns the action for the given key"""
+
+        LOGGER.debug(f"Getting next action for {key}")
         action = action_map.get(key, None)
         if action is None:
             raise ActionException("Unrecognized action state")

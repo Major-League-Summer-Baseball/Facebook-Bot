@@ -6,6 +6,7 @@
 @summary: Test Submit Score Action
 '''
 from typing import List, Tuple
+from api.platform import GameSheet, Game, PlayerInfo, Team, TeamRoster
 from api.actions.action.submit_score import SubmitScore, SubmitScoreByButtons,\
                                             SubmitScoreByText
 
@@ -18,23 +19,11 @@ from api.settings.message_strings import ScoreSubmission, MainMenu
 import unittest
 
 
-SS = "ss"
-HR = "hr"
-TEAM_NAME = "team_name"
-TEAM_ID = "team_id"
 TEAM_ROSTER = "teamroster"
 TEAM_LOOKUP = "team_lookup"
-COLOR = "color"
-CAPTAIN = "captain"
-CAPTAIN_ID = "captain_id"
-PLAYER_NAME = "player_name"
-PLAYER_ID = "player_id"
 GAMES = "games"
-GAME_ID = "game_id"
 GAME_SHEET = "game_sheet"
-SCORE = "score"
 BATTER_ID = "batter_id"
-
 INITIAL_STATE = SubmitScoreByButtons.INITIAL_STATE
 
 
@@ -55,9 +44,9 @@ def setSubmitScoreBackground(player: Player, teamroster: List[Player],
     action_state = player.get_action_state()
     data = action_state.get_data()
     data[GAMES] = [game]
-    data[GAME_ID] = game.get(GAME_ID)
+    data[Game.ID] = game.get(Game.ID)
     data[TEAM_ROSTER] = teamroster
-    data[CAPTAIN] = player.get_player_info()
+    data[Team.CAPTAIN] = player.get_player_info()
     action_state.set_data(data)
     action_state.set_state(state)
     player.set_action_state(action_state)
@@ -76,7 +65,7 @@ class TestSubmitScore(TestActionBase):
         self.action = self.create_action(SubmitScore)
         self.player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
                              name=TestSubmitScore.TEST_PLAYER_NAME)
-        player_info = {PLAYER_ID: TestSubmitScore.TEST_PLAYER_ID}
+        player_info = {PlayerInfo.ID: TestSubmitScore.TEST_PLAYER_ID}
         self.player.set_player_info(player_info)
 
     def mockTeams(self, players: List[Player] = [],
@@ -99,11 +88,11 @@ class TestSubmitScore(TestActionBase):
         else:
             captain = self.random_player()
         for i in range(0, number_of_teams):
-            test_team = {"year": get_this_year(),
-                         "team_name": TestSubmitScore.TEST_TEAM_NAME + str(i),
-                         "team_id": TestSubmitScore.TEST_TEAM_ID + i,
-                         "players": players,
-                         "captain": captain,
+            test_team = {Team.YEAR: get_this_year(),
+                         Team.NAME: TestSubmitScore.TEST_TEAM_NAME + str(i),
+                         Team.ID: TestSubmitScore.TEST_TEAM_ID + i,
+                         TeamRoster.PLAYERS: players,
+                         Team.CAPTAIN: captain,
                          }
             test_teams.append(test_team)
             team_rosters[str(TestSubmitScore.TEST_TEAM_ID + i)] = test_team
@@ -123,10 +112,10 @@ class TestSubmitScore(TestActionBase):
          team_rosters) = self.mockTeams(players=[player],
                                         number_of_teams=number_of_teams)
         for team in test_teams:
-            player.make_captain({TEAM_ID: team.get(TEAM_ID)})
+            player.make_captain({Team.ID: team.get(Team.ID)})
+        self.platform.lookup_teams_player_associated_with\
+            .return_value = test_teams
         self.db.set_player(self.player)
-        self.platform.set_mock_teams(teams=test_teams)
-        self.platform.set_mock_team_roster(team_rosters)
         return test_teams
 
     def testPosingAsCaptain(self):
@@ -168,8 +157,6 @@ class TestSubmitScore(TestActionBase):
             # user types out cancel
             (_, messages, next_action) = self.action.process(self.player,
                                                              normal_message)
-            for message in messages:
-                print(message)
             self.assertEquals(len(messages), 0)
             self.assertEquals(next_action, ActionKey.HOME_KEY)
 
@@ -185,7 +172,7 @@ class TestSubmitScore(TestActionBase):
         self.makePlayerCaptainOfTeams(self.player)
 
         # there are no games to submit for
-        self.platform.set_mock_games_to_submit_scores_for([])
+        self.platform.games_to_submit_scores_for.return_value = []
 
         # first message received - should be sent back to home screen
         message = Message(TestSubmitScore.TEST_SENDER_ID,
@@ -203,7 +190,7 @@ class TestSubmitScore(TestActionBase):
         other_team = self.random_team()
         # there is one game to submit
         game = self.random_game(team, other_team)
-        self.platform.set_mock_games_to_submit_scores_for([game])
+        self.platform.games_to_submit_scores_for.return_value = [game]
 
         message = Message(TestSubmitScore.TEST_SENDER_ID,
                           message="")
@@ -239,7 +226,7 @@ class TestSubmitScore(TestActionBase):
                                                               method_message)
         self.assertEquals(player.get_action_state().get_state(),
                           SubmitScoreByText.INITIAL_STATE)
-        self.assertIsNone(next_action)
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
 
     def testCaptainWithMultipleTeams(self):
         """Test a captain with multiple teams to submit for."""
@@ -249,7 +236,7 @@ class TestSubmitScore(TestActionBase):
 
         # there is one game to submit
         game = self.random_game(team, other_team)
-        self.platform.set_mock_games_to_submit_scores_for([game])
+        self.platform.games_to_submit_scores_for.return_value = [game]
 
         # process the first message - expect message asking for team
         message = Message(TestSubmitScore.TEST_SENDER_ID,
@@ -299,7 +286,7 @@ class TestSubmitScore(TestActionBase):
                                                               method_message)
         self.assertEquals(player.get_action_state().get_state(),
                           SubmitScoreByText.INITIAL_STATE)
-        self.assertIsNone(next_action)
+        self.assertEquals(next_action, ActionKey.HOME_KEY)
 
     def testConvenorSubmittingScore(self):
         """Test a convenor submitting for some team."""
@@ -311,9 +298,10 @@ class TestSubmitScore(TestActionBase):
         other_team = test_teams[1]
         # there is one game to submit
         game = self.random_game(team, other_team)
-        self.platform.set_mock_team_roster(team_rosters)
-        self.platform.set_mock_teams(teams=test_teams)
-        self.platform.set_mock_games_to_submit_scores_for([game])
+        self.platform.lookup_all_teams.return_value = {
+            team.get(Team.ID): team for team in test_teams}
+        self.platform.lookup_team_roster.return_value = team
+        self.platform.games_to_submit_scores_for.return_value = [game]
 
         # process the first message - expect message asking for team
         message = Message(TestSubmitScore.TEST_SENDER_ID,
@@ -325,8 +313,8 @@ class TestSubmitScore(TestActionBase):
         self.assertIsNone(next_action)
 
         # pick the team we want to submit for
-        team_option = Payload(options=[Option(team.get("team_id"),
-                                              str(team.get("team_id")))])
+        team_option = Payload(options=[Option(team.get(Team.ID),
+                                              str(team.get(Team.ID)))])
         team_message = Message(TestSubmitScore.TEST_SENDER_ID,
                                message="",
                                payload=team_option)
@@ -338,8 +326,8 @@ class TestSubmitScore(TestActionBase):
         self.assertIsNone(next_action)
 
         # pick the game we want to submit for
-        game_option = Payload(options=[Option(game.get("game_id"),
-                                              str(game.get("game_id")))])
+        game_option = Payload(options=[Option(game.get(Game.ID),
+                                              str(game.get(Game.ID)))])
         game_message = Message(TestSubmitScore.TEST_SENDER_ID,
                                message="",
                                payload=game_option)
@@ -381,17 +369,19 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
                              name=TestSubmitScore.TEST_PLAYER_NAME)
         player_info = self.random_player(gender="M")
-        player_info[PLAYER_ID] = TestSubmitScore.TEST_PLAYER_ID
+        player_info[PlayerInfo.ID] = TestSubmitScore.TEST_PLAYER_ID
         self.player.set_player_info(player_info)
 
         # setup their background for the game they are submitting for
-        self.roster = [self.random_player(gender="F"),
-                       self.random_player(gender="M"),
-                       player_info]
         self.my_team = self.random_team(captain=player_info)
         self.player.make_captain(self.my_team)
         self.other_team = self.random_team()
         self.game = self.random_game(self.my_team, self.other_team)
+        self.roster = self.my_team
+        self.roster["captain"] = player_info
+        self.roster["players"] = [self.random_player(gender="F"),
+                                  self.random_player(gender="M"),
+                                  player_info]
         self.player = setSubmitScoreBackground(
             self.player,
             self.roster,
@@ -447,9 +437,9 @@ class TestSubmitScoreByButtons(TestActionBase):
                     use_payload: bool = False) -> Player:
         """Pick a batter and specify their number of hits"""
         ss_state = SubmitScoreByButtons.DETERMINE_SS_BATTER_STATE
-        category = (SS
+        category = (GameSheet.SS
                     if player.get_action_state().get_state() == ss_state
-                    else HR)
+                    else GameSheet.HR)
         # pick the batter
         if use_payload:
             batter_option = Payload(options=[Option(batter.get("player_name"),
@@ -481,7 +471,7 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.assertIsNone(next_action)
         self.assertEquals(1, len(messages))
         expected_message = (ScoreSubmission.SS_SELECT_PLAYER.value
-                            if category == SS
+                            if category == GameSheet.SS
                             else ScoreSubmission.HR_SELECT_PLAYER.value)
         self.assertEquals(expected_message, messages[0].get_message())
         return player
@@ -574,8 +564,8 @@ class TestSubmitScoreByButtons(TestActionBase):
         """Test able to handle when given message matches multiple players"""
 
         # setup a situation where match to players
-        self.roster[0]['player_name'] = "Player One"
-        self.roster[1]['player_name'] = "Player Two"
+        self.roster["players"][0]['player_name'] = "Player One"
+        self.roster["players"][1]['player_name'] = "Player Two"
         self.player = setSubmitScoreBackground(
             self.player,
             self.roster,
@@ -608,12 +598,14 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.send_score(player, "eleven")
 
         # already select a batter
-        player = self.pick_batter(player, self.roster[0], "1")
+        batter = self.roster.get(TeamRoster.PLAYERS)[0]
+        player = self.pick_batter(player, batter, "1")
 
         # not try them again
-        player.get_action_state().get_data().get(HR)
+        player.get_action_state().get_data().get(GameSheet.HR)
+        name = batter.get(PlayerInfo.NAME)
         ineligible_message = Message(TestSubmitScore.TEST_SENDER_ID,
-                                     message=self.roster[0].get("player_name"))
+                                     message=name)
         (player, messages,
             next_action) = self.action.process(player, ineligible_message)
 
@@ -645,12 +637,14 @@ class TestSubmitScoreByButtons(TestActionBase):
                           ScoreSubmission.SS_SELECT_PLAYER.value)
 
         # already select a batter
-        player = self.pick_batter(player, self.roster[0], "1")
+        batter = self.roster.get(TeamRoster.PLAYERS)[0]
+        player = self.pick_batter(player, batter, "1")
 
         # not try them again
-        player.get_action_state().get_data().get(HR)
+        player.get_action_state().get_data().get(GameSheet.HR)
+        name = batter.get(PlayerInfo.NAME)
         ineligible_message = Message(TestSubmitScore.TEST_SENDER_ID,
-                                     message=self.roster[0].get("player_name"))
+                                     message=name)
         (player, messages,
             next_action) = self.action.process(player, ineligible_message)
 
@@ -680,8 +674,9 @@ class TestSubmitScoreByButtons(TestActionBase):
                           ScoreSubmission.SS_SELECT_PLAYER.value)
 
         # try submitting a male player
+        name = self.roster.get(TeamRoster.PLAYERS)[1].get(PlayerInfo.NAME)
         ineligible_message = Message(TestSubmitScore.TEST_SENDER_ID,
-                                     message=self.roster[1].get("player_name"))
+                                     message=name)
         (player, messages,
             next_action) = self.action.process(player, ineligible_message)
 
@@ -700,16 +695,16 @@ class TestSubmitScoreByButtons(TestActionBase):
         player = self.initial_message(self.player)
         self.send_score(player, score)
 
+        name = self.roster.get(TeamRoster.PLAYERS)[0].get(PlayerInfo.NAME)
         batter_message = Message(TestSubmitScore.TEST_SENDER_ID,
-                                 message=self.roster[0].get("player_name"))
+                                 message=name)
         (player, messages,
             next_action) = self.action.process(player, batter_message)
 
         # now ask for how many
         self.assertIsNone(next_action)
         self.assertEquals(1, len(messages))
-        expected_message = ScoreSubmission.HOW_HITS_PLAYER.value.format(
-            self.roster[0].get("player_name"))
+        expected_message = ScoreSubmission.HOW_HITS_PLAYER.value.format(name)
         self.assertEquals(expected_message, messages[0].get_message())
 
         # say too many with homeruns
@@ -729,16 +724,16 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.send_score(player, "eleven")
 
         # pick wrong batter
-        batter = self.roster[0]
+        batter = self.roster[TeamRoster.PLAYERS][0]
         wrong_message = Message(TestSubmitScore.TEST_SENDER_ID,
-                                message=batter.get("player_name"))
+                                message=batter.get(PlayerInfo.NAME))
         (player, messages,
             next_action) = self.action.process(player, wrong_message)
         self.assertIsNone(next_action)
         self.assertEquals(1, len(messages))
         self.assertEquals(messages[0].get_message(),
                           ScoreSubmission.HOW_HITS_PLAYER.value.format(
-                              batter.get("player_name")))
+                              batter.get(PlayerInfo.NAME)))
 
         # cancel selection
         cancel_message = Message(TestSubmitScore.TEST_SENDER_ID,
@@ -772,16 +767,16 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.assertEquals(messages[0].get_message(),
                           ScoreSubmission.SS_SELECT_PLAYER.value)
         # pick wrong batter
-        batter = self.roster[0]
+        batter = self.roster.get(TeamRoster.PLAYERS)[0]
         wrong_message = Message(TestSubmitScore.TEST_SENDER_ID,
-                                message=batter.get("player_name"))
+                                message=batter.get(PlayerInfo.NAME))
         (player, messages,
             next_action) = self.action.process(player, wrong_message)
         self.assertIsNone(next_action)
         self.assertEquals(1, len(messages))
         self.assertEquals(messages[0].get_message(),
                           ScoreSubmission.HOW_HITS_PLAYER.value.format(
-                              batter.get("player_name")))
+                              batter.get(PlayerInfo.NAME)))
 
         # cancel selection
         cancel_message = Message(TestSubmitScore.TEST_SENDER_ID,
@@ -813,7 +808,7 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.assertEquals(next_action, ActionKey.HOME_KEY)
 
         # ensure no game sheet was submitted at all
-        self.assertIsNone(self.platform.get_game_score())
+        self.assertFalse(self.platform.submit_game_sheet.called)
 
     def testCancelSubmissionByPayload(self):
         """Test cancelling on the review screen using a payload"""
@@ -832,14 +827,14 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.assertEquals(next_action, ActionKey.HOME_KEY)
 
         # ensure no game sheet was submitted at all
-        self.assertIsNone(self.platform.get_game_score())
+        self.assertFalse(self.platform.submit_game_sheet.called)
 
     def testSubmissionUsingMessages(self):
         """Test a submission using just messages"""
         # submit everything up until game sheet review
         score = "11"
-        female = self.roster[0]
-        male = self.roster[1]
+        female = self.roster.get(TeamRoster.PLAYERS)[0]
+        male = self.roster.get(TeamRoster.PLAYERS)[1]
         player = self.get_to_submit_review(score, [(male, "1 hr")],
                                            [(female, "2 ss")])
 
@@ -853,19 +848,22 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.assertEquals(next_action, ActionKey.HOME_KEY)
 
         # ensure the game sheet submitted makes sense
-        self.assertEquals(self.platform.get_game_score().get(HR),
-                          [male.get("player_id")])
-        self.assertEquals(self.platform.get_game_score().get(SS),
-                          2 * [female.get("player_id")])
-        self.assertEquals(self.platform.get_game_score().get(SCORE),
-                          int(score))
+        expected_game_sheet = {
+            GameSheet.HR: [male.get(PlayerInfo.ID)],
+            GameSheet.SS: 2 * [female.get(PlayerInfo.ID)],
+            GameSheet.SCORE: int(score),
+            GameSheet.GAME_ID: self.game.get(Game.ID),
+            GameSheet.PLAYER_ID: self.player.get_player_id()
+        }
+        self.assertTrue(self.platform.submit_game_sheet)
+        self.platform.submit_game_sheet.assert_called_with(expected_game_sheet)
 
     def testSubmissionUsingPayloads(self):
         """Test a submission using just paylods"""
         # submit everything up until game sheet review
         score = "11"
-        female = self.roster[0]
-        male = self.roster[1]
+        female = self.roster.get(TeamRoster.PLAYERS)[0]
+        male = self.roster.get(TeamRoster.PLAYERS)[1]
         player = self.get_to_submit_review(score, [(male, "1")],
                                            [(female, "2")],
                                            use_payload=True)
@@ -883,12 +881,15 @@ class TestSubmitScoreByButtons(TestActionBase):
         self.assertEquals(next_action, ActionKey.HOME_KEY)
 
         # ensure the game sheet submitted makes sense
-        self.assertEquals(self.platform.get_game_score().get(HR),
-                          [male.get("player_id")])
-        self.assertEquals(self.platform.get_game_score().get(SS),
-                          2 * [female.get("player_id")])
-        self.assertEquals(self.platform.get_game_score().get(SCORE),
-                          int(score))
+        expected_game_sheet = {
+            GameSheet.HR: [male.get(PlayerInfo.ID)],
+            GameSheet.SS: 2 * [female.get(PlayerInfo.ID)],
+            GameSheet.SCORE: int(score),
+            GameSheet.GAME_ID: self.game.get(Game.ID),
+            GameSheet.PLAYER_ID: self.player.get_player_id()
+        }
+        self.assertTrue(self.platform.submit_game_sheet)
+        self.platform.submit_game_sheet.assert_called_with(expected_game_sheet)
 
 
 class TestSubmitScoreByText(TestActionBase):
@@ -903,7 +904,7 @@ class TestSubmitScoreByText(TestActionBase):
         self.action = self.create_action(SubmitScore)
         self.player = Player(messenger_id=TestSubmitScore.TEST_SENDER_ID,
                              name=TestSubmitScore.TEST_PLAYER_NAME)
-        player_info = {"player_id": TestSubmitScore.TEST_PLAYER_ID}
+        player_info = {PlayerInfo.ID: TestSubmitScore.TEST_PLAYER_ID}
         self.player.set_player_info(player_info)
 
     def setupBackground(self):

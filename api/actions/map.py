@@ -12,7 +12,7 @@ from api.actions.action.submit_score import SubmitScore
 from api.actions import ActionKey
 
 
-ACTION_MAP = {str(ActionKey.WELCOME_KEY): WelcomeUser,
-              str(ActionKey.IDENTIFY_KEY): IdentifyUser,
-              str(ActionKey.HOME_KEY): Homescreen,
-              str(ActionKey.SUBMIT_SCORE_KEY): SubmitScore}
+ACTION_MAP = {ActionKey.WELCOME_KEY: WelcomeUser,
+              ActionKey.IDENTIFY_KEY: IdentifyUser,
+              ActionKey.HOME_KEY: Homescreen,
+              ActionKey.SUBMIT_SCORE_KEY: SubmitScore}

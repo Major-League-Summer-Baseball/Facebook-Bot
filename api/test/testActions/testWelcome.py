@@ -39,7 +39,8 @@ class TestWelcome(TestActionBase):
         # player is part of some teams
         test_teams = [self.random_team(),
                       self.random_team(year=get_this_year() - 1)]
-        self.platform.set_mock_teams(teams=test_teams)
+        self.platform.lookup_teams_player_associated_with\
+            .return_value = test_teams
 
         # process the message
         message = Message(TestWelcome.TEST_SENDER_ID)
@@ -75,7 +76,8 @@ class TestWelcome(TestActionBase):
         # the player is a captain this year
         test_teams = [self.random_team(captain=self.player.get_player_info()),
                       self.random_team(year=get_this_year() - 1)]
-        self.platform.set_mock_teams(teams=test_teams)
+        self.platform.lookup_teams_player_associated_with\
+            .return_value = test_teams
 
         # process the message
         (player, messages, next_action) = self.action.process(self.player,
@@ -119,7 +121,10 @@ class TestWelcome(TestActionBase):
              self.random_string()])
         test_teams = [self.random_team(),
                       self.random_team(year=get_this_year() - 1)]
-        self.platform.set_mock_teams(teams=test_teams)
+        self.platform.lookup_all_teams.return_value = {
+            test_teams[0].get("team_id"): test_teams[0],
+            test_teams[1].get("team_id"): test_teams[1],
+        }
 
         # process the message
         message = Message(TestWelcome.TEST_SENDER_ID, message="")

@@ -53,7 +53,6 @@ class TestHomescreen(TestActionBase):
         if convenor:
             self.player.make_convenor()
         self.db.set_player(self.player)
-        self.platform.set_mock_teams(teams=test_teams)
         return test_teams
 
     def testEvents(self):
@@ -61,7 +60,7 @@ class TestHomescreen(TestActionBase):
         # setup the background
         self.background_setup()
         mock_event = "Beerlympics"
-        self.platform.set_mock_events({mock_event: "June 7th"})
+        self.platform.get_events.return_value = {mock_event: "June 7th"}
 
         # process message
         message = Message(TestHomescreen.TEST_SENDER_ID,
@@ -84,7 +83,7 @@ class TestHomescreen(TestActionBase):
         self.background_setup()
         fun_count = 1
         mock_fun_meter = [{"year": get_this_year(), "count": fun_count}]
-        self.platform.set_mock_fun_meter(mock_fun_meter)
+        self.platform.fun_meter.return_value = mock_fun_meter
 
         # process the message
         message = Message(TestHomescreen.TEST_SENDER_ID,
@@ -120,7 +119,7 @@ class TestHomescreen(TestActionBase):
                          "team": "Heaven Red",
                          "year": 2019
                          }]
-        self.platform.set_mock_league_leaders(mock_leaders)
+        self.platform.league_leaders.return_value = mock_leaders
 
         # process the message
         message = Message(TestHomescreen.TEST_SENDER_ID,
@@ -170,7 +169,7 @@ class TestHomescreen(TestActionBase):
                                 "status": "To Be Played",
                                 "field": "WP1"
                                 }]
-        self.platform.set_mock_upcoming_games(mock_upcoming_games)
+        self.platform.get_upcoming_games.return_value = mock_upcoming_games
 
         # process the message
         message = Message(TestHomescreen.TEST_SENDER_ID,
@@ -203,7 +202,7 @@ class TestHomescreen(TestActionBase):
         # setup the background
         self.background_setup()
         mock_upcoming_games = []
-        self.platform.set_mock_upcoming_games(mock_upcoming_games)
+        self.platform.get_upcoming_games.return_value = mock_upcoming_games
 
         # process the message
         message = Message(TestHomescreen.TEST_SENDER_ID,

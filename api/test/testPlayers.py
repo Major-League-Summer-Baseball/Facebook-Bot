@@ -65,7 +65,6 @@ class TestPlayer(unittest.TestCase):
         # make sure from_dictionary does not overwrite values
         player.from_dictionary({})
         player_dict = player.to_dictionary()
-        print(player_dict)
         self.assertEqual(test["messenger_name"],
                          player_dict["messenger_name"])
         self.assertEqual(test["messenger_id"],

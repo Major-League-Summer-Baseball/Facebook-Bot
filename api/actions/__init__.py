@@ -21,6 +21,29 @@ class ActionKey(Enum):
         """Returns the string representation of the action key"""
         return str(self.value)
 
+    @staticmethod
+    def getKey(key: str) -> 'ActionKey':
+        """Get the action key based upon the string
+
+        Args:
+            key (str): The key
+
+        Raises:
+            ActionException: unknown key
+
+        Returns:
+            ActionKey: the key
+        """
+        if key.lower() == str(ActionKey.WELCOME_KEY):
+            return ActionKey.WELCOME_KEY
+        elif key.lower() == str(ActionKey.IDENTIFY_KEY):
+            return ActionKey.IDENTIFY_KEY
+        elif key.lower() == str(ActionKey.HOME_KEY):
+            return ActionKey.HOME_KEY
+        elif key.lower() == str(ActionKey.SUBMIT_SCORE_KEY):
+            return ActionKey.SUBMIT_SCORE_KEY
+        raise ActionException("Unknown key")
+
 
 class ActionState():
     """Holds the state of the action"""
@@ -47,16 +70,16 @@ class ActionState():
         self._data = deepcopy(data)
         return self
 
-    def set_state(self, state: ActionKey) -> 'ActionState':
+    def set_state(self, state: str) -> 'ActionState':
         """Setter for the state"""
         self._state = state
         return self
 
-    def get_state(self) -> ActionKey:
+    def get_state(self) -> str:
         """Getter for the state"""
         return self._state
 
-    def get_id(self) -> str:
+    def get_id(self) -> ActionKey:
         """Getter for the id of the action"""
         return self._key
 
@@ -66,12 +89,13 @@ class ActionState():
         key = dictionary.get("id", None)
         if key is None:
             raise ActionException("Action id not set")
+        key = ActionKey.getKey(key)
         return ActionState(key, data=dictionary.get("data", {}),
                            state=dictionary.get("state", None))
 
     def to_dictionary(self) -> dict:
         """Return a dictionary representation of the action state"""
-        return {"id": self._key,
+        return {"id": str(self._key),
                 "data": self._data,
                 "state": self._state}
 

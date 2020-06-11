@@ -13,6 +13,7 @@ from api.actions.action_processor import ActionProcessor
 from api.actions import ActionKey
 from api.actions.action.identify_user import IdentifyUser
 from api.settings.message_strings import Registration
+from api.errors import IdentityException
 
 import unittest
 
@@ -31,6 +32,10 @@ class TestActionProcessor(TestActionBase):
 
     def testFirstMessageDoNotMatch(self):
         """Test first message but can't recongize them from messenger infor."""
+
+        # when platform is asked say I dont know them
+        unknown = IdentityException('Unknown player')
+        self.platform.lookup_player_by_email.side_effect = unknown
 
         # setup the user who is asking
         user = User(TestActionProcessor.TEST_SENDER_ID,
@@ -76,7 +81,7 @@ class TestActionProcessor(TestActionBase):
 
         # the platform will recognize the player by email
         test_player_info = self.random_player()
-        self.platform.set_mock_player(player_by_email=test_player_info)
+        self.platform.lookup_player_by_email.return_value = test_player_info
 
         # got the message what is up and process the action
         message = Message(TestActionProcessor.TEST_SENDER_ID,
@@ -114,7 +119,7 @@ class TestActionProcessor(TestActionBase):
 
         # the platform will recognize the player by name
         test_player_info = self.random_player()
-        self.platform.set_mock_player(player_by_name=test_player_info)
+        self.platform.lookup_player_by_name.return_value = test_player_info
 
         # got the message what is up and process the action
         message = Message(TestActionProcessor.TEST_SENDER_ID,

@@ -7,7 +7,6 @@
 import json
 import traceback
 import requests
-from api.helper import log
 from flask import Flask, request
 from flask_pymongo import PyMongo
 from api.logging import LOGGER
@@ -38,7 +37,8 @@ def verify():
     if (request.args.get("hub.mode") == "subscribe" and
             request.args.get("hub.challenge")):
         if (not request.args.get("hub.verify_token") == VERIFY_TOKEN):
-            log("Not right token")
+            token = request.args.get("hub.verify_token")
+            LOGGER.critical(f"Incorrect verify token: {token}")
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
     return "Hello world", 200
@@ -62,8 +62,7 @@ def typing_on(sender_id):
     r = requests.post("https://graph.facebook.com/v2.6/me/messages",
                       headers=headers, data=data, params=params)
     if r.status_code != 200:
-        log(r.status_code)
-        log(r.text)
+        LOGGER.critical(f"{r.status_code}: {r.text}")
 
 
 def typing_off(sender_id):
@@ -84,8 +83,7 @@ def typing_off(sender_id):
     r = requests.post("https://graph.facebook.com/v2.6/me/messages",
                       headers=headers, data=data, params=params)
     if r.status_code != 200:
-        log(r.status_code)
-        log(r.text)
+        LOGGER.critical(f"{r.status_code}: {r.text}")
 
 
 def use_action_mapper(message_event):
@@ -104,8 +102,7 @@ def webhook():
     data = request.get_json()
     # you may not want to log every incoming message in production,
     # but it's good for testing
-    log("Incoming message")
-    log(data)
+    LOGGER.debug(f"Incoming message: {data}")
     if data["object"] == "page":
         for entry in data["entry"]:
             for messaging_event in entry["messaging"]:

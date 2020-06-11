@@ -12,6 +12,7 @@ from api.test.testActions import TestActionBase
 from api.actions import ActionKey
 from api.actions.action.identify_user import IdentifyUser
 from api.settings.message_strings import Registration
+from api.errors import IdentityException
 import unittest
 
 
@@ -58,7 +59,6 @@ class TestIdentifyUser(TestActionBase):
         self.player.set_action_state(self.player
                                      .get_action_state()
                                      .set_state(state))
-
         # send message with no email
         email = "I do not know"
         message = Message(TestIdentifyUser.TEST_SENDER_ID, message=email)
@@ -84,7 +84,7 @@ class TestIdentifyUser(TestActionBase):
 
         # we match the player on the platform
         test_player_info = self.random_player()
-        self.platform.set_mock_player(player_by_email=test_player_info)
+        self.platform.lookup_player_by_email.return_value = test_player_info
 
         # got the message contain their email and process the message
         message = "My email is {}".format("someEmail@mlsb.ca")
@@ -115,6 +115,8 @@ class TestIdentifyUser(TestActionBase):
         self.player.set_action_state(self.player
                                      .get_action_state()
                                      .set_state(state))
+        unknown = IdentityException("")
+        self.platform.lookup_player_by_email.side_effect = unknown
 
         # send a bunch of bad emails
         attempts = 0
@@ -160,7 +162,7 @@ class TestIdentifyUser(TestActionBase):
         # the player has not signed up yet
         self.db.set_already_in_league(False)
         player_info = self.random_player()
-        self.platform.set_mock_player(player_by_email=player_info)
+        self.platform.lookup_player_by_email.return_value = player_info
 
         # set the state to such that we are expecting their email
         state = IdentifyUser.EMAIL_STATE
