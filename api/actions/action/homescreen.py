@@ -66,9 +66,6 @@ class Homescreen(Action):
                                              and next action
         """
         message_string = message_string.lower()
-        print(isinstance(message_string, str))
-        print(isinstance(SECRET_CONVENOR_CODE, str))
-        print(message_string == SECRET_CONVENOR_CODE)
         if (message_string in
             [Homescreen.UPCOMING_GAMES_PAYLOAD.lower(),
              MainMenu.UPCOMING_GAMES_TITLE.value.lower()]):
