@@ -138,15 +138,11 @@ class FacebookMessenger(Messenger):
             self._send_buttons(message)
         elif message.get_payload().is_quick_reply():
             quick_replies = message.get_payload().get_payload_response()
-            print("Quick Replies")
-            print(quick_replies)
             message_data = {"recipient":
                             {"id": message.get_sender_id()},
                             "message": {
                                 "text": message.get_message(),
                                 "quick_replies": quick_replies}}
-            print("Message data")
-            print(message_data)
             self._send_data(message_data)
 
     def _send_buttons(self, message):

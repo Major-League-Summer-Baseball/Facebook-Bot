@@ -114,11 +114,11 @@ FUN_COMMENT = ["",
 class ScoreSubmission(Enum):
     """Holds all the string related to submiting a score"""
     NO_GAMES = "There are no games to submit scores for"
-    SELECT_TEAM = "Which team would you like to select team for"
+    SELECT_TEAM = "Which team would you like to submit for"
     SELECT_GAME = "What game would you like to submit a score for"
     WHICH_METHOD = "How would you like to submit your score"
     TEXT_METHOD = "Simple message"
-    BUTTON_METHOD = "Menu using buttons"
+    BUTTON_METHOD = "Assisted Menu"
     UNRECOGNIZED_GAME = "Sorry, did not recognize the game"
     UNRECOGNIZED_TEAM = "Sorry, did not recognize the team"
     UNRECOGNIZED_METHOD = "Sorry, did not understand."
