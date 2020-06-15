@@ -714,8 +714,11 @@ class TestSubmitScoreByButtons(TestActionBase):
             next_action) = self.action.process(player, too_many_message)
         # now asked about HR
         self.assertIsNone(next_action)
-        self.assertEquals(1, len(messages))
-        self.assertEquals(messages[0].get_message(), expected_message)
+        self.assertEquals(2, len(messages))
+        self.assertEquals(messages[0].get_message(),
+                          ScoreSubmission.TOO_MANY_HRS.value)
+        self.assertEquals(messages[1].get_message(),
+                          ScoreSubmission.HR_SELECT_PLAYER.value)
 
     def testCancelBatterHRSelection(self):
         """Test able to cancel picking number for batter"""

@@ -53,6 +53,7 @@ class IdentifyUser(Action):
             # try figuring out who they are by their email
             return self.check_email(player)
         else:
+            LOGGER.info(f"Ignoring message from: {message.get_sender_id()}")
             # all other states we just ignore them
             return (player, [], None)
 
@@ -70,7 +71,7 @@ class IdentifyUser(Action):
         state_data["wrongGuesses"] += 1
 
         # if they have guessed wrong three times then lock them out
-        if state_data["wrongGuesses"] > IdentifyUser.NUMBER_OF_TRIES:
+        if state_data["wrongGuesses"] >= IdentifyUser.NUMBER_OF_TRIES:
             LOGGER.info("Player ({}) is locked out".format(str(player)))
             state.set_state(IdentifyUser.LOCKED_OUT_STATE)
             message = Message(self.message.get_sender_id(),

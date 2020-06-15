@@ -27,6 +27,25 @@ GAME_SHEET = "game_sheet"
 BATTER_ID = "batter_id"
 
 
+def short_game_format(game: Game, team_id: int) -> str:
+    """The short game format for inside the button menus
+
+    Args:
+        game (Game): the game object
+        team_id (int): the id of the team that is submitting
+
+    Returns:
+        str: a short representation of the game
+    """
+    team = None
+    if (game.get(Game.AWAY_TEAM_ID) == team_id):
+        team = game.get(Game.HOME_TEAM)
+    else:
+        team = game.get(Game.AWAY_TEAM)
+    date = "-".join(game.get(Game.DATE).split("-")[1:])
+    return f"{date}: {team} @ {game.get(Game.TIME)}"
+
+
 def get_team_name(team: Team) -> str:
     """Get the team name from the team.
 
@@ -36,7 +55,8 @@ def get_team_name(team: Team) -> str:
     Returns:
         str: the team name if present otherwise its color
     """
-    return team.get(Team.NAME, team.get(Team.COLOR, "name unknown"))
+    return team.get(Team.NAME, team.get(Team.COLOR,
+                                        team.get("name", "name unknown")))
 
 
 def did_they_cancel(message: Message) -> bool:
@@ -357,7 +377,7 @@ class SubmitScore(Action):
 
         game_options = []
         for game in games:
-            option = Option(GameFormatter(game).format(),
+            option = Option(short_game_format(game, team_id),
                             str(game.get(Game.ID)))
             game_options.append(option)
 
@@ -525,7 +545,7 @@ class SubmitScore(Action):
                                                                  message)
             message = Message(message.get_sender_id(),
                               recipient_id=message.get_recipient_id(),
-                              message=ScoreSubmission.UNRECOGNIZED_TEAM)
+                              message=ScoreSubmission.UNRECOGNIZED_TEAM.value)
             return (player, [message] + messages, next_action)
 
         # lookup the team captain and see it
@@ -595,14 +615,15 @@ class SubmitScore(Action):
             method = message.get_message()
 
         method = "" if method is None else method.lower().strip()
-        if method == ScoreSubmission.TEXT_METHOD.value or "message" in method:
+        if (method == ScoreSubmission.TEXT_METHOD.value.lower() or
+                "message" in method):
             action_state = player.get_action_state()
             player.set_action_state(
                 action_state.set_state(SubmitScoreByText.INITIAL_STATE))
             return SubmitScoreByText(self.database,
                                      self.platform).process(player, message)
-        elif (method == ScoreSubmission.BUTTON_METHOD.value or
-                "button" in method):
+        elif (method == ScoreSubmission.BUTTON_METHOD.value.lower() or
+                "menu" in method):
             action_state = player.get_action_state()
             player.set_action_state(
                 action_state.set_state(SubmitScoreByButtons.INITIAL_STATE))
@@ -970,8 +991,23 @@ class SubmitScoreByButtons(Action):
             action_state.set_data(data)
             player.set_action_state(action_state)
             return self.display_batters(player, message, category)
+        elif hits is not None and more_hr_than_rbis(game_sheet, hits):
+            # let them know that is too many
+            too_many = Message(message.get_sender_id(),
+                               recipient_id=message.get_recipient_id(),
+                               message=ScoreSubmission.TOO_MANY_HRS.value)
+            (player, messages,
+                next_action) = self.display_batters(player, message, category)
+            return (player, [too_many] + messages, next_action)
         else:
-            return self.ask_for_category_number(player, message, category)
+            # let them know did not understand
+            content = ScoreSubmission.UNRECOGNIZED_METHOD.value
+            try_again = Message(message.get_sender_id(),
+                                recipient_id=message.get_recipient_id(),
+                                message=content)
+            (player, messages,
+                next_action) = self.display_batters(player, message, category)
+            return (player, [try_again] + messages, next_action)
 
     def display_review(self, player: Player,
                        message: Message) -> Tuple[Player, List[Message],

@@ -53,6 +53,7 @@ class HomescreenComments(Enum):
     NO_GAMES = "No upcoming games"
     NOT_CAPTAIN = "Appears you are not a captain"
     NO_UPCOMING_GAMES = "There are no upcoming games"
+    WELCOME_CONVENOR = "Welcome to elite club 😉"
 
 
 MAIN_MENU_UPCOMING_GAMES_TITLE = "Upcoming Games"
@@ -113,16 +114,17 @@ FUN_COMMENT = ["",
 class ScoreSubmission(Enum):
     """Holds all the string related to submiting a score"""
     NO_GAMES = "There are no games to submit scores for"
-    SELECT_TEAM = "Which team would you like to select team for"
+    SELECT_TEAM = "Which team would you like to submit for"
     SELECT_GAME = "What game would you like to submit a score for"
     WHICH_METHOD = "How would you like to submit your score"
     TEXT_METHOD = "Simple message"
-    BUTTON_METHOD = "Menu using buttons"
+    BUTTON_METHOD = "Assisted Menu"
     UNRECOGNIZED_GAME = "Sorry, did not recognize the game"
     UNRECOGNIZED_TEAM = "Sorry, did not recognize the team"
     UNRECOGNIZED_METHOD = "Sorry, did not understand."
     UNRECOGNIZED_PLAYER = "Sorry, not sure who you meant"
     PLAYER_NOT_ELIGIBLE = "Sorry, player not elgible right now"
+    TOO_MANY_HRS = "Sorry cant havve more homeruns than runs scored"
     AMBIGUOUS_PLAYER = "Sorry, unable to distinguish between {}"
     HR_SELECT_PLAYER = "Select a player who hit a homerun:"
     SS_SELECT_PLAYER = "Select a player who hit a Sapporo single:"

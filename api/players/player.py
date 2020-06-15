@@ -77,7 +77,8 @@ class Player():
             "teams": self._teams,
             "captain": self._teams_that_captain,
             "subscriptions": self._subscriptions.to_dictionary(),
-            "action_state": self._action_state.to_dictionary()}
+            "action_state": self._action_state.to_dictionary(),
+            "convenor": self._convenor}
 
     def messenger_search(self):
         """Returns the search parameters when searching by messenger id"""
