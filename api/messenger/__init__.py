@@ -5,7 +5,8 @@
 @project: Facebook Bot
 @summary: Used so bot can connect to different messengers (Facebook, Kik, etc)
 '''
-
+from api.message import Message
+from api.pl
 
 class Messenger():
     """
@@ -16,27 +17,36 @@ class Messenger():
     def __init__(self):
         pass
 
-    def send_message(self, message):
-        """Sends the given message.
-        Parameters:
-            message: the message to send (Message)
+    def send_message(self, message: Message) -> None:
+        """Sends the given message
+
+        Args:
+            message (Message): the message to send
+
+        Raises:
+            NotImplementedError: to be implemented by child
         """
         raise NotImplementedError("Messenger needs to implement send message")
 
-    def parse_response(self, response):
-        """Parses the message from the response given by the messenger.
-        Parameters:
-            response: response object (dependent upon messenger)
-        Returns:
-            message: the message parsed from the response (Message)
+    def parse_response(self, response: dict):
+        """[summary]
+
+        Args:
+            response (dict): response object (dependent upon messenger)
+
+        Raises:
+            NotImplementedError: to be implemented by child
         """
         raise NotImplementedError("Messenger needs to implement parse message")
 
-    def lookup_user_id(self, user_id):
-        """Lookups the user information associated with the given id
-        Parameters:
-            user_id: the id of the user (dependent upon messenger)
-        Returns:
-            user: a user object return from the messenger (Object/Dictionary)
+    def lookup_user_id(self, user_id: str) -> 'User':
+        """Lookup the user by the id
+
+        Args:
+            user_id (str): [description]
+
+        Returns
+        Raises:
+            NotImplementedError: [description]
         """
         raise NotImplementedError("Messenger needs to imeplement user lookup")

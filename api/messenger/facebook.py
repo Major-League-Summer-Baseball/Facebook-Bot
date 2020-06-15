@@ -23,11 +23,11 @@ class FacebookMessenger(Messenger):
     MALES = ["male", "m"]
     FIELDS = "fields=id,name,gender,email"
 
-    def __init__(self, token):
+    def __init__(self, token: str):
         self.token = token
         self.headers = {"Content-Type": "application/json"}
 
-    def lookup_user_id(self, user_id):
+    def lookup_user_id(self, user_id: str) -> User:
         """Looks up some information from facebook about the given user
         Parameters:
             user_id: the id of the user

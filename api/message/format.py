@@ -5,7 +5,7 @@
 @project: Facebook Bot
 @summary: Holds formatter of various types
 '''
-
+from api.mlsb.typing import Game
 
 class DataFormatter():
     """
@@ -42,11 +42,11 @@ class GameFormatter(DataFormatter):
 
     def format(self):
         """Returns a formatted string representation of the game"""
-        return "{}:\n{} vs {}\n @ {} on {}".format(self._data['date'],
-                                                   self._data['home_team'],
-                                                   self._data['away_team'],
-                                                   self._data['time'],
-                                                   self._data['field'])
+        return "{}:\n{} vs {}\n @ {} on {}".format(self._data[Game.DATE],
+                                                   self._data[Game.HOME_TEAM],
+                                                   self._data[Game.AWAY_TEAM],
+                                                   self._data[Game.TIME],
+                                                   self._data[Game.FIELD])
 
 
 class LeagueLeaderFormatter(DataFormatter):
