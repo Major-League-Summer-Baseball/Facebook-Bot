@@ -12,7 +12,7 @@
 from typing import Tuple, List
 from api.actions import ActionKey
 from api.database import DatabaseInterface
-from api.platform import PlatformService
+from api.mlsb.platform import PlatformService
 from api.players.player import Player
 from api.message import Message
 

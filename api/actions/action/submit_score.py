@@ -6,13 +6,14 @@
 @summary: Action for when a captain/convenor submits a score
 '''
 from typing import Tuple, List
-from api.platform import TeamRoster, Team, PlayerInfo, GameSheet, Game
+from api.mlsb.typing import TeamRoster, Team, PlayerInfo, GameSheet, Game
 from api.players.player import Player
 from api.parsers import parse_number, match_with_player
 from api.helper import is_game_in_list_of_games
 from api.actions import ActionKey
 from api.actions.action import Action
-from api.message import Message, Option, Payload, GameFormatter
+from api.message import Message, Option, Payload
+from api.message.format import GameFormatter
 from api.settings.message_strings import ScoreSubmission, GameSheetOverview
 from api.errors import PlatformException, GameDoesNotExist, NotCaptainException
 

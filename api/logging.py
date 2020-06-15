@@ -3,8 +3,12 @@ import logging
 import sys
 
 
-def setupLogger():
-    """Returns a logger that outputs to stdout (for heroku)"""
+def setupLogger() -> logging.Logger:
+    """Setups the logger to use for the project
+
+    Returns:
+        logging.Logger: the project logger
+    """
     level = os.environ.get("logging", "info")
     logger = logging.getLogger()
     handler = logging.StreamHandler(sys.stdout)

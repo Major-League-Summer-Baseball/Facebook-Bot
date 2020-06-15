@@ -7,8 +7,9 @@
 '''
 from typing import List, Tuple
 from api.logging import LOGGER
-from api.message import Option, Payload, Message,\
-    LeagueLeaderFormatter, EventFormatter, GameFormatter
+from api.message import Option, Payload, Message
+from api.message.format import LeagueLeaderFormatter, EventFormatter,\
+    GameFormatter
 from api.helper import random_emoji, random_fun_comment
 from api.settings.message_strings import HomescreenComments, MainMenu
 from api.players.player import Player

@@ -4,14 +4,13 @@
 @organization: Fun
 @summary: Holds the app
 '''
-import json
 import traceback
-import requests
+from typing import Tuple
 from flask import Flask, request
 from flask_pymongo import PyMongo
 from api.logging import LOGGER
 from api.messenger.facebook import FacebookMessenger
-from api.platform import PlatformService
+from api.mlsb.platform import PlatformService
 from api.database.mongo import DatabaseService
 from api.actions.map import ACTION_MAP
 from api.actions.action_processor import ActionProcessor
@@ -31,7 +30,12 @@ ACTION_PROCESSOR = ActionProcessor(DATABASE, PLATFORM, MESSENGER)
 
 
 @app.route('/', methods=['GET'])
-def verify():
+def verify() -> Tuple[str, int]:
+    """Used to verify the bit app with the messenger.
+
+    Returns:
+        Tuple[str, int]: a success message and http status code
+    """
     # when the endpoint is registered as a webhook, it must echo back
     # the 'hub.challenge' value it receives in the query arguments
     if (request.args.get("hub.mode") == "subscribe" and
@@ -44,60 +48,13 @@ def verify():
     return "Hello world", 200
 
 
-def typing_on(sender_id):
-    """Lets the user know the bot is processing
-    """
-    params = {
-        "access_token": PAGE_ACCESS_TOKEN
-    }
-    headers = {
-        "Content-Type": "application/json"
-    }
-    data = {
-        "recipient": {
-            "id": sender_id},
-        "sender_action": "typing_on"
-    }
-    data = json.dumps(data)
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-                      headers=headers, data=data, params=params)
-    if r.status_code != 200:
-        LOGGER.critical(f"{r.status_code}: {r.text}")
-
-
-def typing_off(sender_id):
-    """Lets the user know the bot is processing
-    """
-    params = {
-        "access_token": PAGE_ACCESS_TOKEN
-    }
-    headers = {
-        "Content-Type": "application/json"
-    }
-    data = {
-        "recipient": {
-            "id": sender_id},
-        "sender_action": "typing_off"
-    }
-    data = json.dumps(data)
-    r = requests.post("https://graph.facebook.com/v2.6/me/messages",
-                      headers=headers, data=data, params=params)
-    if r.status_code != 200:
-        LOGGER.critical(f"{r.status_code}: {r.text}")
-
-
-def use_action_mapper(message_event):
-    """Respond to the message using the action mapper"""
-    try:
-        message = MESSENGER.parse_response(message_event)
-        ACTION_PROCESSOR.process(message, ACTION_MAP)
-    except Exception:
-        LOGGER.critical(str(Exception))
-        traceback.print_exc()
-
-
 @app.route('/', methods=['POST'])
-def webhook():
+def webhook() -> Tuple[str, int]:
+    """The web hook for dealing with messages.
+
+    Returns:
+        Tuple[str, int]: the http message and http status code
+    """
     # endpoint for processing incoming messaging events
     data = request.get_json()
     # you may not want to log every incoming message in production,
@@ -107,12 +64,18 @@ def webhook():
         for entry in data["entry"]:
             for messaging_event in entry["messaging"]:
                 use_action_mapper(messaging_event)
-
     return "ok", 200
 
 
-def change_mongo(m):
-    """Used for testing
+def use_action_mapper(message_event: dict) -> None:
+    """Use the action mapper to respond to the given message
+
+    Args:
+        message_event (dict): a message from Facebook
     """
-    global mongo
-    mongo = m
+    try:
+        message = MESSENGER.parse_response(message_event)
+        ACTION_PROCESSOR.process(message, ACTION_MAP)
+    except Exception:
+        LOGGER.critical(str(Exception))
+        traceback.print_exc()

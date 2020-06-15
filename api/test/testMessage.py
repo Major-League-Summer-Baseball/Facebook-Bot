@@ -5,7 +5,8 @@
 @project: Facebook Bot
 @summary: Test message package
 '''
-from api.message import Option, Message, StringFormatter, EventFormatter
+from api.message import Option, Message
+from api.message.format import StringFormatter, EventFormatter
 from api.errors import OptionException
 import unittest
 

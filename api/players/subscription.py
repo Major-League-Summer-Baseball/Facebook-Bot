@@ -10,7 +10,7 @@ from api.logging import LOGGER
 from api.errors import InvalidSubscription
 from api.variables import SUBSCRIPTION_TIME_RANGE
 from api.helper import difference_in_minutes_between_dates
-import datetime
+from datetime import datetime, time, timedelta
 TRUTHINESS = ['true', '1', 't', 'y', 'yes',
               'yeah', 'yup', 'certainly', 'uh-huh', True]
 
@@ -49,8 +49,7 @@ class Subscription():
             subscription.subscribed = False
         if Subscription.TIME_KEY in dictionary.keys():
             value = dictionary[Subscription.TIME_KEY]
-            subscription.time = datetime.datetime.strptime(value,
-                                                           "%H:%M").time()
+            subscription.time = datetime.strptime(value, "%H:%M").time()
         else:
             subscription.time = None
         if Subscription.RELATIVE_TIME_KEY in dictionary.keys():
@@ -61,7 +60,7 @@ class Subscription():
 
         return subscription
 
-    def to_dictionary(self):
+    def to_dictionary(self) -> dict:
         """Returns a dictionary representation of the object"""
         result = {Subscription.SUBCRIBED_KEY: self.subscribed}
         if self.time is not None:
@@ -70,58 +69,61 @@ class Subscription():
             result[Subscription.RELATIVE_TIME_KEY] = self.relative_time.value
         return result
 
-    def is_subscribed(self):
+    def is_subscribed(self) -> bool:
         """Returns whereh the subscription is in place or not"""
         return False if self.subscribed is None else self.subscribed
 
-    def subscribed(self):
+    def subscribed(self) -> None:
         """Activates the subscription"""
         self.subscribed = True
 
-    def unsubscribed(self):
+    def unsubscribed(self) -> None:
         """Deactivates the subscription"""
         self.subscribed = False
 
     def should_send_reminder(self,
-                             gameDate, comparison=datetime.datetime.now()):
-        """Returns whether the subscription calls for a game reminder
-        Parameters:
-            gameDate: the date of the game to give the reminder about
-            comparison: an optional parameter if do not want to compare
-            to right now (mainly for testing)
+                             gameDate: datetime,
+                             comparison: datetime = datetime.now()) -> bool:
+        """Should send a reminder based upon the given game date.
+
+        Args:
+            gameDate (datetime): the date of the game for the reminder
+            comparison (datetime, optional): The comparison date.
+                                             Defaults to datetime.now().
+
         Returns:
-            within: True if the given time is within the subscription range
+            bool: True if should send reminder otherwise False
         """
-        time = None
+        local_time = None
         relative_time = None
         if self.time is not None:
-            time = datetime.datetime.combine(gameDate.date(), self.time)
+            local_time = datetime.combine(gameDate.date(), self.time)
         if self.relative_time is not None:
             if self.relative_time is RelativeTimeEnum.MORNING:
-                relative_time = datetime.datetime.combine(gameDate.date(),
-                                                          datetime.time(8, 0))
+                relative_time = datetime.combine(gameDate.date(), time(8, 0))
             elif self.relative_time is RelativeTimeEnum.HOUR_BEFORE:
-                relative_time = gameDate - datetime.timedelta(hours=1)
+                relative_time = gameDate - timedelta(hours=1)
             elif self.relative_time is RelativeTimeEnum.NIGHT_BEFORE:
-                day_before = (gameDate - datetime.timedelta(days=1))
-                relative_time = datetime.datetime.combine(day_before.date(),
-                                                          datetime.time(20, 0))
+                day_before = (gameDate - timedelta(days=1))
+                relative_time = datetime.combine(day_before.date(),
+                                                 time(20, 0))
         # check if right now is in the subscription reminder time frame
-        c1 = (difference_in_minutes_between_dates(
-            time, comparison) < SUBSCRIPTION_TIME_RANGE)
-        c2 = (difference_in_minutes_between_dates(
-            relative_time, comparison) < SUBSCRIPTION_TIME_RANGE)
-        LOGGER.debug("Subscription {} and {}".format(str(c1), str(c2)))
-        LOGGER.debug("relative time:{}, time: {}, comparison:{}".format(
-            relative_time, time, comparison))
+        c1 = difference_in_minutes_between_dates(
+                local_time, comparison) < SUBSCRIPTION_TIME_RANGE
+        c2 = difference_in_minutes_between_dates(
+                relative_time, comparison) < SUBSCRIPTION_TIME_RANGE
+        LOGGER.debug(f"Subscription {c1} and {c2}")
+        LOGGER.debug(f"relative time:{relative_time}, time: {local_time}")
         return c1 or c2
 
-    def set_relative_time(self, relative_enum):
-        """Sets the relative time
-        Parameters:
-            relative_enum: the relative time to use (RelativeTimeEnum)
+    def set_relative_time(self, relative_enum: RelativeTimeEnum) -> None:
+        """Sets the relative time of the subscription.
+
+        Args:
+            relative_enum (RelativeTimeEnum): type of relative subscription
+
         Raises:
-             InvalidSubscription if unrecognized relative time given
+            InvalidSubscription:given an invalid subscription
         """
         if (relative_enum is RelativeTimeEnum.MORNING or
                 relative_enum is RelativeTimeEnum.HOUR_BEFORE or
@@ -132,18 +134,20 @@ class Subscription():
         LOGGER.error(message)
         raise InvalidSubscription(message)
 
-    def set_time(self, time):
-        """Sets the time of the subscription
-        Parameters:
-            time: the datetime time to use for the subscription (Time)
+    def set_time(self, some_time: datetime) -> None:
+        """Set the time of the subscription
+
+        Args:
+            some_time (datetime): the time of the subscription
+
         Raises:
-             InvalidSubscription if time is not of type datetime.Time
+            InvalidSubscription: an invalid subscription
         """
-        if (isinstance(time, datetime.time) or
-                isinstance(time, datetime.datetime)):
-            self.time = time
+        if (isinstance(some_time, time) or
+                isinstance(some_time, datetime)):
+            self.time = some_time
             return
-        message = "Given time of the wrong type: {}".format(time)
+        message = "Given time of the wrong type: {}".format(some_time)
         LOGGER.error(message)
         raise InvalidSubscription(message)
 
@@ -176,7 +180,7 @@ class Subscriptions():
         subscriptions.team_lookup = team_lookup
         return subscriptions
 
-    def to_dictionary(self):
+    def to_dictionary(self) -> dict:
         """Returns the dictionary representation of the subscription"""
         result = {"league": self.league}
         for team_id, subscribed in self.team_lookup.items():
@@ -184,42 +188,63 @@ class Subscriptions():
             result[str(team_id)] = subscribed.to_dictionary()
         return result
 
-    def is_subscribed_to_league(self):
+    def is_subscribed_to_league(self) -> bool:
         """Returns whether subscribed to the league"""
         return self.league
 
-    def subscribe_to_league(self):
+    def subscribe_to_league(self) -> None:
         """Subcribed to the league"""
         self.league = True
 
-    def unsubscribe_from_league(self):
+    def unsubscribe_from_league(self) -> None:
         """Unsubscribe from the league"""
         self.league = False
 
-    def is_subscribed_to_team(self, team_id):
-        """Returns whether subscribed to the givem team"""
+    def is_subscribed_to_team(self, team_id: int) -> bool:
+        """Is the player subscribed to the given team.
+
+        Args:
+            team_id (int): the id of the team
+
+        Returns:
+            bool: True if subscribed otherwise False
+        """
         if str(team_id) in self.team_lookup.keys():
             return self.team_lookup[str(team_id)].is_subscribed()
         else:
             return False
 
-    def get_subscription_for_team(self, team_id):
-        """Returns the subscription for the given team"""
+    def get_subscription_for_team(self, team_id: int) -> Subscription:
+        """Get the subscription for the given team.
+
+        Args:
+            team_id (int): id of the team
+
+        Returns:
+            Subscription: the subscription if they are subscribed
+                          otherwise None
+        """
         if str(team_id) in self.team_lookup.keys():
             return self.team_lookup[str(team_id)]
         return None
 
-    def subscribe_to_team(self, team_id, subscription=None):
-        """Subscribe to the given team
-        Parameters:
-            team_id: the id of the team to subscribe to
-            subscription: the subscription policy for the team
-                (otherwise use default)
+    def subscribe_to_team(self, team_id: int,
+                          subscription: Subscription = None) -> None:
+        """Subscribe to the given team.
+
+        Args:
+            team_id (int): the id of the team
+            subscription (Subscription, optional): the subscription.
+                                                   Defaults to None.
         """
         if subscription is None:
             subscription = Subscription()
         self.team_lookup[str(team_id)] = subscription
 
-    def unsubscribe_from_team(self, team_id):
-        """Unsubscribe from the given team"""
+    def unsubscribe_from_team(self, team_id: int) -> None:
+        """Unsubscribe from the given team.
+
+        Args:
+            team_id (int): id of the team to unsubscribed from
+        """
         self.team_lookup.pop(str(team_id), None)

@@ -95,14 +95,3 @@ class GameDoesNotExist(PlatformException):
 class NotCaptainException(PlatformException):
     """The player making the request is not the captain"""
     pass
-
-
-class BatterException(Exception):
-    pass
-
-
-class MultiplePlayersException(Exception):
-
-    def __init__(self, message, players):
-        super().__init__(message)
-        self.players = players

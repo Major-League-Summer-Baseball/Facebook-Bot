@@ -6,7 +6,7 @@
 @summary: Test Submit Score Action
 '''
 from typing import List, Tuple
-from api.platform import GameSheet, Game, PlayerInfo, Team, TeamRoster
+from api.mlsb.typing import GameSheet, Game, PlayerInfo, Team, TeamRoster
 from api.actions.action.submit_score import SubmitScore, SubmitScoreByButtons,\
                                             SubmitScoreByText
 

@@ -5,6 +5,8 @@
 @project: Facebook Bot
 @summary: The basic player
 '''
+from typing import List
+from api.mlsb.typing import Team, PlayerInfo
 from api.players.subscription import Subscriptions
 from api.actions import ActionState, ActionKey
 from api.errors import InvalidActionState, InvalidSubscription
@@ -14,7 +16,7 @@ class Player():
 
     IDENTIFIER = "Player"
 
-    def __init__(self, messenger_id=None, name=None):
+    def __init__(self, messenger_id: str = None, name: str = None):
         self._messenger_id = messenger_id
         self._messenger_name = name
         self._player_info = None
@@ -25,17 +27,17 @@ class Player():
         self._teams_that_captain = []
 
     @staticmethod
-    def get_messenger_search(messenger_id):
+    def get_messenger_search(messenger_id: str) -> dict:
         """Returns the search parameters when searching by messenger id"""
         return {"messenger_id": messenger_id}
 
     @staticmethod
-    def get_player_search(player_info):
+    def get_player_search(player_info: PlayerInfo) -> dict:
         """Returns the search parameters when searching by player info"""
         return {"player_id": player_info["player_id"]}
 
     @staticmethod
-    def from_dictionary(dictionary):
+    def from_dictionary(dictionary: dict) -> 'Player':
         """Sets the player attributes from the given dictionary"""
         messenger_id = dictionary.get("messenger_id", None)
 
@@ -63,7 +65,7 @@ class Player():
             player._action_state = ActionState.from_dictionary(action_state)
         return player
 
-    def to_dictionary(self):
+    def to_dictionary(self) -> dict:
         """Returns the dictionary representation of the player"""
         player_id = None
         if (self._player_info is not None and
@@ -80,43 +82,43 @@ class Player():
             "action_state": self._action_state.to_dictionary(),
             "convenor": self._convenor}
 
-    def messenger_search(self):
+    def messenger_search(self) -> dict:
         """Returns the search parameters when searching by messenger id"""
         return {"messenger_id": self._messenger_id}
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Gets the name of the player"""
         return self._messenger_name
 
-    def get_action_state(self):
+    def get_action_state(self) -> ActionState:
         """Returns a copy of the state of the action the player is taking"""
         return ActionState.from_dictionary(self._action_state.to_dictionary())
 
-    def set_action_state(self, action_state):
+    def set_action_state(self, action_state: ActionState) -> None:
         """Setter for the action state"""
         if isinstance(action_state, ActionState):
             self._action_state = action_state
         else:
             raise InvalidActionState("Incorrect type: expecting ActionState")
 
-    def set_player_info(self, player_info):
+    def set_player_info(self, player_info: PlayerInfo) -> None:
         """Setter for the player info"""
         self._player_info = player_info
 
-    def get_player_info(self):
+    def get_player_info(self) -> PlayerInfo:
         """Returns information about the player"""
         return self._player_info
 
-    def get_player_id(self):
+    def get_player_id(self) -> int:
         """Return the id associated with this player"""
-        return self._player_info["player_id"]
+        return self._player_info[PlayerInfo.ID]
 
-    def get_subscriptions(self):
+    def get_subscriptions(self) -> Subscriptions:
         """Returns a copy of the subscriptions"""
         return Subscriptions.from_dictionary(self._subscriptions
                                              .to_dictionary())
 
-    def set_subscriptions(self, subscriptions):
+    def set_subscriptions(self, subscriptions: Subscriptions) -> None:
         """Sets the subscriptions"""
         if isinstance(subscriptions, Subscriptions):
             self._subscriptions = subscriptions
@@ -124,64 +126,92 @@ class Player():
             message = "Incorrect type: expecting Subscriptions"
             raise InvalidSubscription(message)
 
-    def is_convenor(self):
+    def is_convenor(self) -> bool:
         """Returns whether the given player is a convenor"""
         return self._convenor
 
-    def make_convenor(self):
+    def make_convenor(self) -> None:
         """Gives the player convenor permissions"""
         self._convenor = True
 
-    def remove_convenor(self):
+    def remove_convenor(self) -> None:
         """Remove the player's convenor permissions"""
         self._convenor = False
 
-    def get_team_ids(self):
-        """Get a list of team ids that player is part of"""
+    def get_team_ids(self) -> List[int]:
+        """Get a list of team ids
+
+        Returns:
+            List[int]: a list of teams that player is part of
+        """
         return self._teams
 
-    def add_team(self, team):
-        """Add a team to the list of teams the player is part of"""
-        team_id = team.get("team_id", None)
-        if team_id is not None and team_id not in self._teams:
-            self._teams.append(team["team_id"])
-            self._subscriptions.subscribe_to_team(team['team_id'])
+    def add_team(self, team: Team) -> None:
+        """Add the player to the team and subscribed them to the team.
 
-    def remove_team(self, team):
-        """Removes the player from the given team"""
+        Args:
+            team (team): the team
+        """
+        team_id = team.get(Team.ID, None)
+        if team_id is not None and team_id not in self._teams:
+            self._teams.append(team[Team.ID])
+            self._subscriptions.subscribe_to_team(team[Team.ID])
+
+    def remove_team(self, team: Team) -> None:
+        """Remove the player from the team
+
+        Args:
+            team (Team): the team
+        """
         try:
-            self._teams.remove(team["team_id"])
-            self._subscriptions.unsubscribe_to_team(team["team_id"])
+            self._teams.remove(team[Team.ID])
+            self._subscriptions.unsubscribe_to_team(team[Team.ID])
         except ValueError:
             pass
 
-    def get_teams_captain(self):
-        """Gets a list of team ids that the player is captain of"""
+    def get_teams_captain(self) -> List[int]:
+        """Get a list of teams that the players is a captain.
+
+        Returns:
+            List[int]: a list of team ids
+        """
         return self._teams_that_captain
 
-    def make_captain(self, team):
-        """Adds the player as a captain"""
-        team_id = team.get("team_id", None)
+    def make_captain(self, team: Team) -> None:
+        """Make the player a captain of the given team.
+
+        Args:
+            team (Team): the team
+        """
+        team_id = team.get(Team.ID, None)
         if team_id is not None and team_id not in self._teams_that_captain:
             self._teams_that_captain.append(team_id)
 
-    def remove_captain(self, team):
-        """Remove the captainship from the player for the given team"""
+    def remove_captain(self, team: Team) -> None:
+        """Remove the captainship for the given team.
+
+        Args:
+            team (Team): the team
+        """
         try:
-            self._teams_that_captain.remove(team["team_id"])
+            self._teams_that_captain.remove(team.get(Team.ID))
         except ValueError:
             pass
 
-    def is_captain(self, team_id=None):
-        """Returns whether the given player is a captain
+    def is_captain(self, team_id: int = None) -> bool:
+        """Is the player a captain of the given team.
 
-            Parameters:
-                team_id: if given then checks if player captain of given team
+        Args:
+            team_id (int, optional): if want to check captain of some team.
+                                     Defaults to None.
+
+        Returns:
+            bool: True if player is a captain otherwise False
         """
         if team_id is None:
             return self._convenor or len(self._teams_that_captain) > 0
         else:
             return self._convenor or team_id in self._teams_that_captain
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{} - {}".format(self._messenger_name, self._messenger_id)

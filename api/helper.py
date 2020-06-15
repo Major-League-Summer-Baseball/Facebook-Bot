@@ -8,7 +8,6 @@
 from typing import List
 from api.settings.message_strings import SASSY_COMMENT, FUN_COMMENT, EMOJI,\
     COMPLIMENT, INTROS
-from json import loads as loader
 from datetime import datetime
 from random import randint
 import sys
@@ -71,34 +70,3 @@ def random_sass() -> str:
 def random_compliment() -> str:
     """Returns a random compliment."""
     return COMPLIMENT[randint(0, len(COMPLIMENT) - 1)]
-
-
-def loads(data: any) -> dict:
-    """Loads the given data as a dictionary.
-
-    Args:
-        data (any): the data to load
-
-    Returns:
-        dict: the loaded dictionary
-    """
-    try:
-        data = loader(data)
-    except Exception:
-        data = loader(data.decode('utf-8'))
-    return data
-
-
-def log(message: any) -> None:
-    """Log the given object or str.
-
-    Args:
-        message (any): the thing to log
-    """
-    # simple wrapper for logging to stdout on heroku
-    try:
-        print(str(message))
-        sys.stdout.flush()
-    except Exception as e:
-        print(str(e))
-        pass

@@ -7,7 +7,7 @@
 '''
 from api.logging import LOGGER
 from api.database import DatabaseInterface
-from api.platform import PlatformService
+from api.mlsb.platform import PlatformService
 from api.messenger import Messenger
 from api.messenger.user import User
 from api.players.player import Player

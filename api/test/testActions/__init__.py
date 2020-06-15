@@ -8,7 +8,7 @@
 from random import randint, choice
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
-from api.platform import PlatformService, Player, Team, Game, TeamRoster
+from api.mlsb.platform import PlatformService, Player, Team, Game, TeamRoster
 from api.test.testDoubles.messengerDouble import MessengerDouble
 from api.test.testDoubles.databaseDouble import DatabaseDouble
 from api.helper import get_this_year
